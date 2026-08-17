@@ -81,6 +81,22 @@ docker run --rm -v "$(pwd):/var/www/html" -w /var/www/html composer:latest \
 > Windows 使用者：請用 Git Bash 或 WSL 執行這些指令，不要用 CMD/PowerShell 原生視窗，
 > `$(pwd)` 這種語法在 PowerShell 裡意義不同會出錯。
 
+> ⚠️ **如果看到大量 `HTTP/2 429` 錯誤裝不完**：這是 composer 在跟 GitHub 要套件時，
+> 撞到 GitHub **未登入請求**的流量限制（每小時 60 次，一次全新安裝隨便就會用掉上百次）。
+> 常發生在公司/學校共用對外 IP，或短時間內重跑好幾次安裝的情況。解法（任選一種）：
+>
+> - **最簡單**：等 10–60 分鐘讓額度重置，直接重跑同一行指令即可（已下載成功的套件會跳過，不用整個重來——
+>   但如果每次都用 `docker run --rm` 且沒有掛快取目錄，重試也沒用，見下面第二點）
+> - **加速重試**：幫 composer 的下載快取掛一個持久化目錄，這樣重試只需要抓還沒抓到的部分：
+>   ```bash
+>   mkdir -p ~/.composer-cache
+>   docker run --rm -v "$(pwd):/var/www/html" -v ~/.composer-cache:/tmp/cache \
+>     -w /var/www/html composer:latest composer install --ignore-platform-reqs
+>   ```
+> - **一勞永逸**：申請一組免費的 [GitHub Personal Access Token](https://github.com/settings/tokens)（不用勾任何權限），
+>   把上面指令加一段 `-e COMPOSER_AUTH='{"github-oauth":{"github.com":"你的token"}}'`，
+>   額度會從 60 次/小時提升到 5000 次/小時，通常一次就能裝完。
+
 ### 4. 啟動所有服務
 
 ```bash
