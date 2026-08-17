@@ -1,0 +1,239 @@
+{
+    "info": {
+        "name": "Star Cloud - 會員 API",
+        "description": "智能販賣機商城會員系統 API 測試集合",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost/api",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "會員註冊",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"測試會員\",\n    \"email\": \"test@example.com\",\n    \"phone\": \"0912345678\",\n    \"password\": \"password123\",\n    \"birthday\": \"1990-01-01\",\n    \"gender\": \"male\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/members/register",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "members",
+                        "register"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "if (pm.response.code === 201) {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.collectionVariables.set('token', jsonData.data.token);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "會員登入",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"account\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/members/login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "members",
+                        "login"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "if (pm.response.code === 200) {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.collectionVariables.set('token', jsonData.data.token);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "社群登入",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"provider\": \"line\",\n    \"provider_id\": \"U1234567890abcdef\",\n    \"access_token\": \"test_access_token\",\n    \"name\": \"Line 用戶\",\n    \"email\": \"line@example.com\",\n    \"avatar\": \"https://example.com/avatar.jpg\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/members/social-login",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "members",
+                        "social-login"
+                    ]
+                }
+            },
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "exec": [
+                            "if (pm.response.code === 200) {",
+                            "    var jsonData = pm.response.json();",
+                            "    pm.collectionVariables.set('token', jsonData.data.token);",
+                            "}"
+                        ],
+                        "type": "text/javascript"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "取得個人資料",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/members/profile",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "members",
+                        "profile"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "更新個人資料",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"更新後的名字\",\n    \"birthday\": \"1995-06-15\",\n    \"gender\": \"female\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/members/profile",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "members",
+                        "profile"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "登出",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/members/logout",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "members",
+                        "logout"
+                    ]
+                }
+            }
+        }
+    ]
+}

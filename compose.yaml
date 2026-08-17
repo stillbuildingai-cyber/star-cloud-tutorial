@@ -1,0 +1,213 @@
+services:
+    laravel.test:
+        build:
+            context: './docker/8.5'
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: 'sail-8.5/app'
+        container_name: star-cloud-laravel
+        hostname: star-cloud-laravel
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        ports:
+            - '${APP_PORT:-80}:80'
+            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            SUPERVISOR_PHP_COMMAND: "/usr/bin/php -d variables_order=EGPCS /var/www/html/artisan serve --host=0.0.0.0 --port=80"
+            LARAVEL_SAIL: 1
+            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
+            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
+            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            TZ: 'Asia/Taipei'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mysql
+            - redis
+        restart: unless-stopped
+
+    laravel.queue:
+        image: 'sail-8.5/app'
+        container_name: star-cloud-queue
+        hostname: star-cloud-queue
+        command: php artisan queue:work --tries=3 --timeout=90
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            TZ: 'Asia/Taipei'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mysql
+            - redis
+        restart: unless-stopped
+    laravel.mqtt:
+        image: 'sail-8.5/app'
+        container_name: star-cloud-mqtt-worker
+        hostname: star-cloud-mqtt-worker
+        command: php artisan mqtt:listen
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+            TZ: 'Asia/Taipei'
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - mysql
+            - redis
+            - emqx
+        restart: unless-stopped
+
+    mysql:
+        image: 'mysql/mysql-server:8.0'
+        container_name: star-cloud-mysql
+        hostname: star-cloud-mysql
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_HOST: '%'
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+            MYSQL_EXTRA_OPTIONS: '${MYSQL_EXTRA_OPTIONS:-}'
+            TZ: 'Asia/Taipei'
+        volumes:
+            - 'sail-mysql:/var/lib/mysql'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - mysqladmin
+                - ping
+                - '-p${DB_PASSWORD}'
+            retries: 3
+            timeout: 5s
+        restart: unless-stopped
+    redis:
+        image: 'redis:alpine'
+        container_name: star-cloud-redis
+        hostname: star-cloud-redis
+        ports:
+            - '${FORWARD_REDIS_PORT:-6379}:6379'
+        command: --requirepass ${REDIS_PASSWORD}
+        volumes:
+            - 'sail-redis:/data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - '-a'
+                - '${REDIS_PASSWORD}'
+                - ping
+            retries: 3
+            timeout: 5s
+        restart: unless-stopped
+    emqx:
+        image: 'emqx/emqx:5.10.3'
+        container_name: star-cloud-emqx
+        hostname: emqx
+        ports:
+            - '${MQTT_PORT:-1883}:1883'
+            - '${MQTT_SSL_PORT:-8883}:8883'
+            - '${EMQX_DASHBOARD_PORT:-18083}:18083'
+            - '8083:8083'
+        environment:
+            TZ: 'Asia/Taipei'
+            EMQX_DASHBOARD__BOOTSTRAP_USER_PASS: 'public'
+            EMQX_AUTHORIZATION__SOURCES__1__TYPE: 'file'
+            EMQX_AUTHORIZATION__SOURCES__1__PATH: '/opt/emqx/etc/acl.conf'
+        volumes:
+            - 'sail-emqx:/opt/emqx/data'
+            - './docker/emqx/acl.conf:/opt/emqx/etc/acl.conf'
+        networks:
+            - sail
+        healthcheck:
+            test: ["CMD", "/opt/emqx/bin/emqx_ctl", "status"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+        depends_on:
+            - redis
+        restart: unless-stopped
+    mqtt-gateway:
+        build:
+            context: ./mqtt-gateway
+            dockerfile: Dockerfile
+        container_name: star-cloud-mqtt-gateway
+        hostname: mqtt-gateway
+        environment:
+            MQTT_BROKER_ADDR: '${MQTT_BROKER_ADDR:-tcp://emqx:1883}'
+            MQTT_GATEWAY_CLIENT_ID: '${MQTT_GATEWAY_CLIENT_ID:-star-cloud-gateway}'
+            MQTT_REDIS_ADDR: '${MQTT_REDIS_ADDR:-redis:6379}'
+            MQTT_REDIS_PASSWORD: '${REDIS_PASSWORD:-}'
+            MQTT_REDIS_PREFIX: '${MQTT_REDIS_PREFIX:-star_cloud_database_}'
+            MQTT_INCOMING_QUEUE: '${MQTT_INCOMING_QUEUE:-mqtt_incoming_jobs}'
+            MQTT_OUTGOING_QUEUE: '${MQTT_OUTGOING_QUEUE:-mqtt_outgoing_commands}'
+            MQTT_USER: '${MQTT_USER:-star-cloud-gateway}'
+            MQTT_PASSWORD: '${MQTT_PASSWORD:-tutorial-gateway-secret}'
+            TZ: 'Asia/Taipei'
+        networks:
+            - sail
+        restart: unless-stopped
+        depends_on:
+            - emqx
+            - redis
+    # meilisearch:
+    #     image: 'getmeili/meilisearch:latest'
+    #     ports:
+    #         - '${FORWARD_MEILISEARCH_PORT:-7700}:7700'
+    #     environment:
+    #         MEILI_NO_ANALYTICS: '${MEILISEARCH_NO_ANALYTICS:-false}'
+    #     volumes:
+    #         - 'sail-meilisearch:/meili_data'
+    #     networks:
+    #         - sail
+    #     healthcheck:
+    #         test:
+    #             - CMD
+    #             - wget
+    #             - '--no-verbose'
+    #             - '--spider'
+    #             - 'http://127.0.0.1:7700/health'
+    #         retries: 3
+    #         timeout: 5s
+    # mailpit:
+    #     image: 'axllent/mailpit:latest'
+    #     ports:
+    #         - '${FORWARD_MAILPIT_PORT:-1025}:1025'
+    #         - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+    #     networks:
+    #         - sail
+    # selenium:
+    #     image: selenium/standalone-chromium
+    #     extra_hosts:
+    #         - 'host.docker.internal:host-gateway'
+    #     volumes:
+    #         - '/dev/shm:/dev/shm'
+    #     networks:
+    #         - sail
+networks:
+    sail:
+        driver: bridge
+volumes:
+    sail-mysql:
+        driver: local
+    sail-redis:
+        driver: local
+    sail-emqx:
+        driver: local
+    # sail-meilisearch:
+    #     driver: local
