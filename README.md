@@ -97,7 +97,19 @@ docker run --rm -v "$(pwd):/var/www/html" -w /var/www/html composer:latest \
 >   把上面指令加一段 `-e COMPOSER_AUTH='{"github-oauth":{"github.com":"你的token"}}'`，
 >   額度會從 60 次/小時提升到 5000 次/小時，通常一次就能裝完。
 
-### 4. 啟動所有服務
+### 4. 建置前端資源（第一次跑，之後不用重複）
+
+跟第 3 步一樣的原因，還沒有 `node_modules` 跟編譯好的 `public/build`，一樣用一次性容器處理：
+
+```bash
+docker run --rm -v "$(pwd):/app" -w /app node:22-slim bash -c "npm install && npm run build"
+```
+
+> ⚠️ 這步沒做的話，網頁能開但**登入頁會直接噴 `ViteManifestNotFoundException`**，
+> 錯誤訊息會說 `Vite manifest not found at: /var/www/html/public/build/manifest.json`。
+> 看到這個錯誤，代表就是漏了這一步。
+
+### 5. 啟動所有服務
 
 ```bash
 docker compose up -d --build
@@ -105,7 +117,7 @@ docker compose up -d --build
 
 第一次啟動會下載 image、編譯 Go Gateway，需要幾分鐘，泡杯茶等一下。
 
-### 5. 初始化資料庫
+### 6. 初始化資料庫
 
 ```bash
 docker compose exec laravel.test php artisan key:generate
@@ -116,7 +128,7 @@ docker compose exec laravel.test php artisan mqtt:sync-auth
 這三行分別做：產生應用程式加密金鑰、建表 + 灌入示範資料（含一台示範插座機台）、
 把機台的 MQTT 帳密同步到 Redis（不做這步，裝置會連線被拒絕）。
 
-### 6. 啟動 MQTT 訊息監聽（背景常駐）
+### 7. 啟動 MQTT 訊息監聽（背景常駐）
 
 ```bash
 docker compose logs -f mqtt-worker
@@ -170,7 +182,7 @@ bash simulate-heartbeat.sh SW-DEMO-001 tutorial-demo-token
 | 看 log | `docker compose logs -f <服務名稱>` |
 | 進 Laravel 容器下指令 | `docker compose exec laravel.test php artisan <指令>` |
 | 重新同步 MQTT 認證 | `docker compose exec laravel.test php artisan mqtt:sync-auth` |
-| 完全重來（清空資料庫重建） | `docker compose down -v && docker compose up -d` 後重跑步驟 5 |
+| 完全重來（清空資料庫重建） | `docker compose down -v && docker compose up -d` 後重跑步驟 6 |
 
 ---
 
