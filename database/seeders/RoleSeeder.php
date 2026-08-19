@@ -79,7 +79,28 @@ class RoleSeeder extends Seeder
             ['name' => 'super-admin', 'company_id' => null],
             ['is_system' => true, 'guard_name' => 'web']
         );
-        $superAdmin->syncPermissions(Permission::all());
+        // 教學版只聚焦智慧插座（機台管理／指令中心／機台設定等），
+        // 販賣機專屬功能（倉庫、銷售、商品、金流等）不授權給教學版的 super-admin，
+        // 選單就不會顯示，跟正式站 iot.stillbuilding.life 目前的精簡設定一致。
+        $superAdmin->syncPermissions([
+            'menu.machines',
+            'menu.machines.list',
+            'menu.machines.permissions',
+            'menu.machines.utilization',
+            'menu.machines.maintenance',
+            'menu.analysis',
+            'menu.analysis.machine-reports',
+            'menu.data-config',
+            'menu.data-config.sub-accounts',
+            'menu.remote',
+            'menu.remote.commands',
+            'menu.basic',
+            'menu.basic.machines',
+            'menu.permissions',
+            'menu.permissions.companies',
+            'menu.permissions.accounts',
+            'menu.permissions.roles',
+        ]);
 
         $tenantAdmin = Role::updateOrCreate(
             ['name' => '客戶管理員角色模板', 'company_id' => null],
