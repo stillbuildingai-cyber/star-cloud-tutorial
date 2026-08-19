@@ -295,7 +295,7 @@
                             <span class="text-base font-extrabold text-slate-900 dark:text-slate-100">$ {{ number_format($machine->today_sales_sum ?? 0, 0) }}</span>
                         </td>
                         <td class="px-6 py-6">
-                            <a href="{{ route('admin.warehouses.machine-inventory', ['machine_id' => $machine->id]) }}" class="block group/stock hover:scale-105 transition-transform">
+                            <div class="block group/stock">
                                 @php
                                 $stockSum = (float)($machine->slots_sum_stock ?? 0);
                                 $maxStockSum = (float)($machine->slots_sum_max_stock ?? 0);
@@ -304,12 +304,12 @@
                                 $textColor = str_replace('bg-', 'text-', $barColor);
                                 @endphp
                                 <div class="flex flex-col items-center gap-y-2.5">
-                                    <div class="w-32 h-2 bg-slate-100 dark:bg-white/10 border border-slate-200/60 dark:border-slate-700/30 rounded-full overflow-hidden shadow-inner group-hover/stock:ring-2 group-hover/stock:ring-cyan-500/30 transition-all">
+                                    <div class="w-32 h-2 bg-slate-100 dark:bg-white/10 border border-slate-200/60 dark:border-slate-700/30 rounded-full overflow-hidden shadow-inner transition-all">
                                         <div class="h-full {{ $barColor }} rounded-full" style="width: {{ $stockPercentage }}%"></div>
                                     </div>
-                                    <span class="text-sm font-black {{ $textColor }} uppercase tracking-[0.2em] group-hover/stock:text-cyan-500 transition-colors">{{ $stockPercentage }}%</span>
+                                    <span class="text-sm font-black {{ $textColor }} uppercase tracking-[0.2em] transition-colors">{{ $stockPercentage }}%</span>
                                 </div>
-                            </a>
+                            </div>
                         </td>
                         <td class="px-6 py-6 text-center">
                             <div class="text-xs font-black text-slate-400 dark:text-slate-400/80 uppercase tracking-widest leading-none">
@@ -439,7 +439,7 @@
 
                 <!-- Stock Bar Section (Essential for Dashboard) -->
                 <div class="mb-2">
-                    <a href="{{ route('admin.warehouses.machine-inventory', ['machine_id' => $machine->id]) }}" class="block group/stock-mobile">
+                    <div class="block">
                         @php
                             $stockSum = (float)($machine->slots_sum_stock ?? 0);
                             $maxStockSum = (float)($machine->slots_sum_max_stock ?? 0);
@@ -447,13 +447,13 @@
                             $barColor = $stockPercentage < 20 ? 'bg-rose-500' : ($stockPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500');
                         @endphp
                         <div class="flex justify-between items-end mb-2">
-                            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest group-hover/stock-mobile:text-cyan-500 transition-colors">{{ __('Current Stock') }}</p>
-                            <span class="text-xs font-black {{ str_replace('bg-', 'text-', $barColor) }} group-hover/stock-mobile:scale-110 transition-transform">{{ $stockPercentage }}%</span>
+                            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest transition-colors">{{ __('Current Stock') }}</p>
+                            <span class="text-xs font-black {{ str_replace('bg-', 'text-', $barColor) }} transition-transform">{{ $stockPercentage }}%</span>
                         </div>
-                        <div class="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden shadow-inner group-hover/stock-mobile:ring-2 group-hover/stock-mobile:ring-cyan-500/30 transition-all">
+                        <div class="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden shadow-inner transition-all">
                             <div class="h-full {{ $barColor }} transition-all duration-500" style="width: {{ $stockPercentage }}%"></div>
                         </div>
-                    </a>
+                    </div>
                 </div>
             </div>
             @empty

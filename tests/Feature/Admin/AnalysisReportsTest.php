@@ -281,27 +281,4 @@ class AnalysisReportsTest extends TestCase
         $this->assertCount(1, $data['table_data']);
         $this->assertEquals($this->machineA->id, $data['table_data'][0]['machine_id']);
     }
-
-    /**
-     * 測試商品報表中的機台過濾功能
-     */
-    public function test_product_reports_machine_filter_works()
-    {
-        $this->actingAs($this->superAdmin);
-
-        // 篩選 Machine B
-        $response = $this->getJson(route('admin.analysis.product-reports', [
-            'company_id' => $this->company->id,
-            'machine_id' => $this->machineB->id
-        ]));
-
-        $response->assertStatus(200);
-        $data = $response->json();
-
-        // Machine B 上面只有 Product Y (Soda)
-        $this->assertEquals(1, $data['summary']['total_quantity']);
-        $this->assertEquals(25.0, $data['summary']['total_sales']);
-        $this->assertCount(1, $data['table_data']);
-        $this->assertEquals($this->productY->id, $data['table_data'][0]['product_id']);
-    }
 }

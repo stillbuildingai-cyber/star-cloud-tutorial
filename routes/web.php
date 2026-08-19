@@ -97,112 +97,9 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
     Route::get('/app-configs', [App\Http\Controllers\Admin\AppConfigController::class, 'index'])->name('app-configs.index');
     Route::put('/app-configs', [App\Http\Controllers\Admin\AppConfigController::class, 'update'])->name('app-configs.update');
 
-    // 5. 倉庫管理
-    Route::prefix('warehouses')->name('warehouses.')->group(function () {
-        // 模組 1：倉庫總覽
-        Route::get('/', [App\Http\Controllers\Admin\WarehouseController::class, 'index'])->name('index');
-        Route::post('/', [App\Http\Controllers\Admin\WarehouseController::class, 'store'])->name('store');
-        Route::put('/{warehouse}', [App\Http\Controllers\Admin\WarehouseController::class, 'update'])->name('update');
-        Route::delete('/{warehouse}', [App\Http\Controllers\Admin\WarehouseController::class, 'destroy'])->name('destroy');
-        Route::patch('/{warehouse}/toggle-status', [App\Http\Controllers\Admin\WarehouseController::class, 'toggleStatus'])->name('toggle-status');
-
-        // 模組 2：庫存管理
-        Route::get('/inventory', [App\Http\Controllers\Admin\WarehouseController::class, 'inventory'])->name('inventory');
-        Route::post('/inventory/stock-in', [App\Http\Controllers\Admin\WarehouseController::class, 'storeStockIn'])->name('inventory.stock-in.store');
-        Route::patch('/inventory/stock-in/{stockInOrder}/confirm', [App\Http\Controllers\Admin\WarehouseController::class, 'confirmStockIn'])->name('inventory.stock-in.confirm');
-        Route::delete('/inventory/stock-in/{stockInOrder}', [App\Http\Controllers\Admin\WarehouseController::class, 'destroyStockIn'])->name('inventory.stock-in.destroy');
-        Route::get('/inventory/stock-in/{order}/details', [App\Http\Controllers\Admin\WarehouseController::class, 'stockInOrderDetails'])->name('inventory.stock-in.details');
-
-        // 模組 3：調撥單
-        Route::get('/transfers', [App\Http\Controllers\Admin\WarehouseController::class, 'transfers'])->name('transfers');
-        Route::post('/transfers', [App\Http\Controllers\Admin\WarehouseController::class, 'storeTransfer'])->name('transfers.store');
-        Route::patch('/transfers/{transferOrder}/confirm', [App\Http\Controllers\Admin\WarehouseController::class, 'confirmTransfer'])->name('transfers.confirm');
-        Route::delete('/transfers/{transferOrder}', [App\Http\Controllers\Admin\WarehouseController::class, 'destroyTransfer'])->name('transfers.destroy');
-        Route::get('/transfers/{id}/details', [App\Http\Controllers\Admin\WarehouseController::class, 'transferOrderDetails'])->name('transfers.details');
-        Route::get('/transfers/{id}/print', [App\Http\Controllers\Admin\WarehouseController::class, 'printTransfer'])->name('transfers.print');
-
-        // 模組 4：機台庫存總覽 (Force Route Refresh)
-        Route::get('/machine-inventory', [App\Http\Controllers\Admin\WarehouseController::class, 'machineInventory'])->name('machine-inventory');
-        Route::get('/machine-inventory/export', [App\Http\Controllers\Admin\WarehouseController::class, 'machineInventoryExportBatch'])->name('machine-inventory.export-batch');
-        Route::get('/machine-inventory/{machine}/slots', [App\Http\Controllers\Admin\WarehouseController::class, 'machineSlots'])->name('machine-inventory.slots');
-        Route::get('/machine-inventory/{machine}/export', [App\Http\Controllers\Admin\WarehouseController::class, 'machineInventoryExport'])->name('machine-inventory.export');
-        Route::get('/machine-inventory/{machine}/movements', [App\Http\Controllers\Admin\WarehouseController::class, 'machineStockMovements'])->name('machine-inventory.movements');
-
-        // 模組 5：機台補貨
-        Route::get('/replenishments', [App\Http\Controllers\Admin\WarehouseController::class, 'replenishments'])->name('replenishments');
-        Route::post('/replenishments', [App\Http\Controllers\Admin\WarehouseController::class, 'storeReplenishment'])->name('replenishments.store');
-        Route::post('/replenishments/auto', [App\Http\Controllers\Admin\WarehouseController::class, 'autoReplenishment'])->name('replenishments.auto');
-        Route::patch('/replenishments/{replenishmentOrder}/status', [App\Http\Controllers\Admin\WarehouseController::class, 'updateReplenishmentStatus'])->name('replenishments.status');
-        Route::patch('/replenishments/{replenishmentOrder}/cancel', [App\Http\Controllers\Admin\WarehouseController::class, 'cancelReplenishment'])->name('replenishments.cancel');
-        Route::patch('/replenishments/{replenishmentOrder}/assign', [App\Http\Controllers\Admin\WarehouseController::class, 'assignReplenishment'])->name('replenishments.assign');
-        Route::get('/replenishments/machine-slots/{machine}', [App\Http\Controllers\Admin\WarehouseController::class, 'getMachineSlotsForReplenishment'])->name('replenishments.machine-slots');
-        Route::get('/replenishments/{order}/details', [App\Http\Controllers\Admin\WarehouseController::class, 'replenishmentOrderDetails'])->name('replenishments.details');
-        Route::get('/replenishments/{id}/print', [App\Http\Controllers\Admin\WarehouseController::class, 'printReplenishment'])->name('replenishments.print');
-
-        // AJAX 庫存查詢
-        Route::get('/ajax/stock', [App\Http\Controllers\Admin\WarehouseController::class, 'getStockAjax'])->name('ajax.stock');
-        Route::get('/{warehouse}/inventory-ajax', [App\Http\Controllers\Admin\WarehouseController::class, 'warehouseStocks'])->name('inventory-ajax');
-    });
-
-    // 6. 銷售管理
-    Route::prefix('sales')->name('sales.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\SalesController::class, 'index'])->name('index');
-
-        // 手動補單（機台斷線/漏報時人工補登銷售紀錄）— 限系統管理員（Controller 內把關）
-        Route::get('/manual/machine-slots', [App\Http\Controllers\Admin\SalesController::class, 'manualMachineSlots'])->name('manual.machine-slots');
-        Route::post('/manual', [App\Http\Controllers\Admin\SalesController::class, 'storeManualOrder'])->name('manual.store');
-
-        // 電子發票對帳/補開/作廢/列印
-        Route::post('/invoices/{invoice}/print', [App\Http\Controllers\Admin\SalesController::class, 'printInvoice'])->name('invoices.print');
-        Route::post('/invoices/{invoice}/reconcile', [App\Http\Controllers\Admin\SalesController::class, 'reconcileInvoice'])->name('invoices.reconcile');
-        Route::post('/invoices/{invoice}/reissue', [App\Http\Controllers\Admin\SalesController::class, 'reissueInvoice'])->name('invoices.reissue');
-        Route::post('/invoices/{invoice}/void', [App\Http\Controllers\Admin\SalesController::class, 'voidInvoice'])->name('invoices.void');
-
-        // 管理者備註（訂單／發票各自獨立）
-        Route::patch('/orders/{order}/remark', [App\Http\Controllers\Admin\SalesController::class, 'updateOrderRemark'])->name('orders.remark');
-        Route::post('/orders/{order}/pickup-code', [App\Http\Controllers\Admin\SalesController::class, 'generateOrderPickupCode'])->name('orders.pickup-code');
-        Route::patch('/invoices/{invoice}/remark', [App\Http\Controllers\Admin\SalesController::class, 'updateInvoiceRemark'])->name('invoices.remark');
-
-        // 取貨碼
-        Route::get('/pickup-codes', [App\Http\Controllers\Admin\SalesController::class, 'pickupCodes'])->name('pickup-codes');
-        // 產碼用：回傳機台所屬公司的商品清單 + 機台目前已上架的 product_id（供前端標示「機台未上架」提示）
-        Route::get('/pickup-codes/company-products/{machine}', [App\Http\Controllers\Admin\SalesController::class, 'pickupCompanyProducts'])->name('pickup-codes.company-products');
-        Route::post('/pickup-codes', [App\Http\Controllers\Admin\SalesController::class, 'storePickupCode'])->name('pickup-codes.store');
-        Route::patch('/pickup-codes/{pickupCode}', [App\Http\Controllers\Admin\SalesController::class, 'updatePickupCode'])->name('pickup-codes.update');
-        Route::delete('/pickup-codes/{pickupCode}', [App\Http\Controllers\Admin\SalesController::class, 'destroyPickupCode'])->name('pickup-codes.destroy');
-        Route::get('/pickup-codes/batch/{batchNo}/download', [App\Http\Controllers\Admin\SalesController::class, 'downloadPickupCodeBatch'])->name('pickup-codes.batch-download');
-
-        // 通行碼
-        Route::get('/pass-codes', [App\Http\Controllers\Admin\SalesController::class, 'passCodes'])->name('pass-codes');
-        Route::post('/pass-codes', [App\Http\Controllers\Admin\SalesController::class, 'storePassCode'])->name('pass-codes.store');
-        Route::patch('/pass-codes/{passCode}', [App\Http\Controllers\Admin\SalesController::class, 'updatePassCode'])->name('pass-codes.update');
-        Route::delete('/pass-codes/{passCode}', [App\Http\Controllers\Admin\SalesController::class, 'destroyPassCode'])->name('pass-codes.destroy');
-        Route::get('/pass-codes/batch/{batchNo}/download', [App\Http\Controllers\Admin\SalesController::class, 'downloadPassCodeBatch'])->name('pass-codes.batch-download');
-
-        Route::get('/orders', [App\Http\Controllers\Admin\SalesController::class, 'orders'])->name('orders');
-        Route::get('/promotions', [App\Http\Controllers\Admin\SalesController::class, 'promotions'])->name('promotions');
-        Route::get('/store-gifts', [App\Http\Controllers\Admin\SalesController::class, 'storeGifts'])->name('store-gifts');
-        Route::post('/store-gifts', [App\Http\Controllers\Admin\SalesController::class, 'storeWelcomeGift'])->name('store-gifts.store');
-        Route::patch('/store-gifts/{welcomeGift}', [App\Http\Controllers\Admin\SalesController::class, 'updateWelcomeGift'])->name('store-gifts.update');
-        Route::delete('/store-gifts/{welcomeGift}', [App\Http\Controllers\Admin\SalesController::class, 'destroyWelcomeGift'])->name('store-gifts.destroy');
-
-        // 領藥單（取物單模式 / 領藥模組）— 受權限 menu.sales.pharmacy-pickup 控管
-        Route::get('/pharmacy-pickup', [App\Http\Controllers\Admin\PharmacyPickupController::class, 'index'])->name('pharmacy-pickup')->middleware('can:menu.sales.pharmacy-pickup');
-        Route::post('/pharmacy-pickup', [App\Http\Controllers\Admin\PharmacyPickupController::class, 'store'])->name('pharmacy-pickup.store')->middleware('can:menu.sales.pharmacy-pickup');
-        Route::get('/pharmacy-pickup/{machine}/products-ajax', [App\Http\Controllers\Admin\PharmacyPickupController::class, 'productsAjax'])->name('pharmacy-pickup.products-ajax')->middleware('can:menu.sales.pharmacy-pickup');
-        Route::get('/pharmacy-pickup/{order}/print', [App\Http\Controllers\Admin\PharmacyPickupController::class, 'print'])->name('pharmacy-pickup.print')->middleware('can:menu.sales.pharmacy-pickup');
-        Route::post('/pharmacy-pickup/{order}/cancel', [App\Http\Controllers\Admin\PharmacyPickupController::class, 'cancel'])->name('pharmacy-pickup.cancel')->middleware('can:menu.sales.pharmacy-pickup');
-
-        // 詳情路由必須放在最後，避免攔截其他具體路由
-        Route::get('/{order}', [App\Http\Controllers\Admin\SalesController::class, 'show'])->name('show');
-    });
-
     // 7. 分析管理
     Route::prefix('analysis')->name('analysis.')->group(function () {
-        Route::get('/change-stock', [App\Http\Controllers\Admin\AnalysisController::class, 'changeStock'])->name('change-stock')->middleware('can:menu.analysis.change-stock');
         Route::get('/machine-reports', [App\Http\Controllers\Admin\AnalysisController::class, 'machineReports'])->name('machine-reports')->middleware('can:menu.analysis.machine-reports');
-        Route::get('/product-reports', [App\Http\Controllers\Admin\AnalysisController::class, 'productReports'])->name('product-reports')->middleware('can:menu.analysis.product-reports');
-        Route::get('/survey-analysis', [App\Http\Controllers\Admin\AnalysisController::class, 'surveyAnalysis'])->name('survey-analysis')->middleware('can:menu.analysis.survey-analysis');
     });
 
     // 8. 稽核管理
@@ -214,27 +111,6 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
 
     // 9. 資料設定
     Route::prefix('data-config')->name('data-config.')->group(function () {
-        Route::middleware('can:menu.data-config.products')->group(function () {
-            Route::get('/products/template', [App\Http\Controllers\Admin\ProductController::class, 'downloadTemplate'])->name('products.template');
-            Route::get('/products/export', [App\Http\Controllers\Admin\ProductController::class, 'export'])->name('products.export');
-            Route::post('/products/import', [App\Http\Controllers\Admin\ProductController::class, 'import'])->name('products.import');
-            Route::resource('products', App\Http\Controllers\Admin\ProductController::class)->except(['show']);
-            Route::patch('/products/{id}/toggle-status', [App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])->name('products.status.toggle');
-            Route::post('/products/sync-all', [App\Http\Controllers\Admin\ProductController::class, 'syncToAllMachines'])->name('products.sync-all');
-            Route::resource('product-categories', App\Http\Controllers\Admin\ProductCategoryController::class)->except(['show', 'create', 'edit']);
-        });
-
-        // 廣告管理 (Advertisement Management)
-        Route::middleware('can:menu.data-config.advertisements')->group(function () {
-            Route::resource('advertisements', App\Http\Controllers\Admin\AdvertisementController::class)->except(['show', 'create', 'edit']);
-            Route::patch('/advertisements/{id}/toggle-status', [App\Http\Controllers\Admin\AdvertisementController::class, 'toggleStatus'])->name('advertisements.status.toggle');
-            Route::get('/advertisements/machine/{machine}', [App\Http\Controllers\Admin\AdvertisementController::class, 'getMachineAds'])->name('advertisements.machine.get');
-            Route::post('/advertisements/assign', [App\Http\Controllers\Admin\AdvertisementController::class, 'assign'])->name('advertisements.assign');
-            Route::post('/advertisements/assignments/reorder', [App\Http\Controllers\Admin\AdvertisementController::class, 'reorderAssignments'])->name('advertisements.assignments.reorder');
-            Route::delete('/advertisements/assignment/{id}', [App\Http\Controllers\Admin\AdvertisementController::class, 'removeAssignment'])->name('advertisements.assignment.remove');
-            Route::post('/advertisements/machine/{machine}/sync', [App\Http\Controllers\Admin\AdvertisementController::class, 'syncToMachine'])->name('advertisements.machine.sync');
-        });
-
         Route::get('/sub-accounts', [App\Http\Controllers\Admin\PermissionController::class, 'accounts'])->name('sub-accounts')->middleware('can:menu.data-config.sub-accounts');
         Route::patch('/sub-accounts/{id}/toggle-status', [App\Http\Controllers\Admin\PermissionController::class, 'toggleAccountStatus'])->name('sub-accounts.status.toggle')->middleware('can:menu.data-config.sub-accounts');
         Route::post('/sub-accounts', [App\Http\Controllers\Admin\PermissionController::class, 'storeAccount'])->name('sub-accounts.store')->middleware('can:menu.data-config.sub-accounts');
@@ -249,17 +125,12 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
         Route::put('/sub-account-roles/{id}', [App\Http\Controllers\Admin\PermissionController::class, 'updateRole'])->name('sub-account-roles.update')->middleware('can:menu.data-config.sub-accounts');
         Route::delete('/sub-account-roles/{id}', [App\Http\Controllers\Admin\PermissionController::class, 'destroyRole'])->name('sub-account-roles.destroy')->middleware('can:menu.data-config.sub-accounts');
         Route::get('/points', [App\Http\Controllers\Admin\DataConfigController::class, 'points'])->name('points');
-        Route::get('staff-cards/template', [App\Http\Controllers\Admin\StaffCardController::class, 'downloadTemplate'])->name('staff-cards.template');
-        Route::post('staff-cards/import', [App\Http\Controllers\Admin\StaffCardController::class, 'import'])->name('staff-cards.import');
-        Route::resource('staff-cards', App\Http\Controllers\Admin\StaffCardController::class);
-        Route::patch('staff-cards/{staffCard}/toggle-status', [App\Http\Controllers\Admin\StaffCardController::class, 'toggleStatus'])->name('staff-cards.status.toggle');
     });
 
     // 10. 遠端管理
     Route::prefix('remote')->name('remote.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\RemoteController::class, 'index'])->name('index');
         Route::post('/command', [App\Http\Controllers\Admin\RemoteController::class, 'storeCommand'])->name('store-command');
-        Route::get('/stock', [App\Http\Controllers\Admin\RemoteController::class, 'stock'])->name('stock');
     });
 
     // 11. Line管理
@@ -290,18 +161,6 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
 
     // 14. 基本設定
     Route::prefix('basic-settings')->name('basic-settings.')->group(function () {
-        // APK 版本管理 (OTA)
-        Route::prefix('apk-versions')
-            ->name('apk-versions.')
-            ->middleware('can:menu.basic.apk-versions')
-            ->group(function () {
-                Route::get('/', [App\Http\Controllers\Admin\BasicSettings\ApkVersionController::class, 'index'])->name('index');
-                Route::get('/create', [App\Http\Controllers\Admin\BasicSettings\ApkVersionController::class, 'create'])->name('create');
-                Route::post('/', [App\Http\Controllers\Admin\BasicSettings\ApkVersionController::class, 'store'])->name('store');
-                Route::delete('/{apkVersion}', [App\Http\Controllers\Admin\BasicSettings\ApkVersionController::class, 'destroy'])->name('destroy');
-                Route::post('/{apkVersion}/push', [App\Http\Controllers\Admin\BasicSettings\ApkVersionController::class, 'push'])->name('push');
-            });
-
         // 機台設定
         Route::prefix('machines')->name('machines.')->middleware('can:menu.basic.machines')->group(function () {
             // 機台照片獨立更新
@@ -320,25 +179,11 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
             Route::post('/geocode', [App\Http\Controllers\Admin\GeocodingController::class, 'resolve'])->name('geocode');
         });
 
-        // 客戶金流設定
-        Route::resource('payment-configs', App\Http\Controllers\Admin\BasicSettings\PaymentConfigController::class)->except(['show'])->middleware('can:menu.basic.payment-configs');
-
         // 機台型號設定
         Route::resource('machine-models', App\Http\Controllers\Admin\BasicSettings\MachineModelController::class)->except(['show']);
 
         // QR Code 生成
         Route::get('qr-code', [App\Http\Controllers\Admin\QrCodeController::class, 'generate'])->name('qr-code');
-
-        // Discord 告警通知設定
-        Route::prefix('discord-notifications')
-            ->name('discord-notifications.')
-            ->middleware('can:menu.basic.discord-notifications')
-            ->group(function () {
-                Route::get('/', [App\Http\Controllers\Admin\BasicSettings\DiscordNotificationController::class, 'index'])->name('index');
-                Route::put('/company/{id}', [App\Http\Controllers\Admin\BasicSettings\DiscordNotificationController::class, 'updateCompany'])->name('update-company');
-                Route::put('/machine/{id}', [App\Http\Controllers\Admin\BasicSettings\DiscordNotificationController::class, 'updateMachine'])->name('update-machine');
-                Route::post('/test', [App\Http\Controllers\Admin\BasicSettings\DiscordNotificationController::class, 'test'])->name('test');
-            });
     });
 
     // 15. 權限設定
