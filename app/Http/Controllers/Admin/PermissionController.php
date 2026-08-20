@@ -670,8 +670,6 @@ class PermissionController extends Controller
 
         $activeModules = [
             'menu.machines',
-            'menu.warehouses',
-            'menu.sales',
             'menu.analysis',
             'menu.data-config',
             'menu.remote',

@@ -98,7 +98,7 @@
                 <td class="px-6 py-6" width="30%">
                     <div class="flex flex-wrap gap-1 max-w-xs">
                         @php
-                            $activeModules = ['menu.machines', 'menu.warehouses', 'menu.sales', 'menu.analysis', 'menu.data-config', 'menu.remote', 'menu.basic', 'menu.permissions'];
+                            $activeModules = ['menu.machines', 'menu.analysis', 'menu.data-config', 'menu.remote', 'menu.basic', 'menu.permissions'];
                             $displayPermissions = $role->permissions->filter(function($p) use ($activeModules) {
                                 if ($p->name === 'menu.data-config.sub-account-roles') return false;
                                 if (str_starts_with($p->name, 'menu.')) {

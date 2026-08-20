@@ -81,7 +81,6 @@ class AnalysisReportsTest extends TestCase
         $role->syncPermissions([
             'menu.analysis',
             'menu.analysis.machine-reports',
-            'menu.analysis.product-reports'
         ]);
         $this->tenantUser->assignRole($role);
 
