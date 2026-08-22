@@ -155,9 +155,6 @@
     deletedPhotos: [false, false, false],
     showImageLightbox: false,
     lightboxImageUrl: '',
-    showMaintenanceQrModal: false,
-    maintenanceQrMachineName: '',
-    maintenanceQrUrl: '',
     permissionSearchQuery: '',
     showMachineSettingsModal: false,
     machineSettings: {},
@@ -278,12 +275,6 @@
         
         mainKeys.forEach(k => this.machineSettings[k] = targetValue);
         subKeys.forEach(k => this.machineSettings[k] = targetValue);
-    },
-    openMaintenanceQr(machine) {
-        this.maintenanceQrMachineName = machine.name;
-        const baseUrl = '{{ route('admin.maintenance.create', ['serial_no' => 'SERIAL_NO']) }}';
-        this.maintenanceQrUrl = baseUrl.replace('SERIAL_NO', machine.serial_no);
-        this.showMaintenanceQrModal = true;
     },
     openDetail(machine, id, serial) {
         this.currentMachine = machine;
@@ -1732,62 +1723,6 @@
             {{ __('Click anywhere to close') }}
         </div>
 </div>
-</template>
-
-
-<!-- 4.2 Maintenance QR Modal -->
-<template x-teleport="body">
-    <div x-show="showMaintenanceQrModal" class="fixed inset-0 z-[200] overflow-y-auto" x-cloak
-        x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0"
-        x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-        <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="fixed inset-0 transition-opacity" @click="showMaintenanceQrModal = false">
-                <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
-            </div>
-
-            <div
-                class="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-800 w-full max-w-sm overflow-hidden animate-luxury-in">
-                <div
-                    class="px-8 py-6 border-b border-slate-50 dark:border-slate-800/50 flex justify-between items-center">
-                    <div>
-                        <h3 class="text-lg font-black text-slate-800 dark:text-white tracking-tight">{{ __('Maintenance QR') }}</h3>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1"
-                            x-text="maintenanceQrMachineName"></p>
-                    </div>
-                    <button @click="showMaintenanceQrModal = false"
-                        class="text-slate-400 hover:text-slate-600 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="p-10 flex flex-col items-center gap-6">
-                    <div class="p-4 bg-white rounded-3xl shadow-xl border border-slate-100">
-                        <x-qr-code data="maintenanceQrUrl" size="200" class="w-48 h-48" />
-                    </div>
-                    <div class="text-center space-y-2">
-                        <p class="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed px-4">
-                            {{ __('Scan this code to quickly access the maintenance form for this device.') }}
-                        </p>
-                        <div
-                            class="mt-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                            <code class="text-[10px] break-all text-cyan-600 dark:text-cyan-400 font-bold"
-                                x-text="maintenanceQrUrl"></code>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    class="px-8 py-6 bg-slate-50 dark:bg-slate-900/50 flex justify-center border-t border-slate-100 dark:border-slate-800">
-                    <button @click="showMaintenanceQrModal = false"
-                        class="btn-luxury-primary w-full py-4 rounded-2xl">{{ __('Close') }}</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </template>
 
 

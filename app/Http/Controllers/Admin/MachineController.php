@@ -174,30 +174,6 @@ class MachineController extends AdminController
 
 
     /**
-     * 機台使用率統計
-     */
-    public function utilization(Request $request): View
-    {
-        // 取得當前使用者有權限的所有機台 (已透過 Global Scope 過濾)
-        $machines = Machine::all();
-
-        $date = $request->get('date', now()->toDateString());
-        $service = app(\App\Services\Machine\MachineService::class);
-        $fleetStats = $service->getFleetStats($date);
-
-        return view('admin.machines.utilization', [
-            'machines' => $machines,
-            'fleetStats' => $fleetStats,
-            'compactMachines' => $machines->map(fn($m) => [
-                'id' => $m->id,
-                'name' => $m->name,
-                'serial_no' => $m->serial_no,
-                'status' => $m->status
-            ])->values()
-        ]);
-    }
-
-    /**
      * AJAX: 取得機台所有貨道資訊 (供效期管理視覺化圖表使用)
      */
     public function slotsAjax(Machine $machine)
@@ -374,35 +350,6 @@ class MachineController extends AdminController
             'success' => true,
             'message' => __('Machine pricing saved and sync command pushed.'),
         ]);
-    }
-
-    /**
-     * 取得機台統計數據 (AJAX)
-     */
-    public function utilizationData(Request $request, $id = null)
-    {
-        $date = $request->get('date', now()->toDateString());
-        $service = app(\App\Services\Machine\MachineService::class);
-
-        if ($id) {
-            $machine = Machine::findOrFail($id);
-            $stats = $service->getUtilizationStats($machine, $date);
-        } else {
-            $stats = $service->getFleetStats($date);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $stats
-        ]);
-    }
-
-    /**
-     * 機台維護紀錄 (開發中)
-     */
-    public function maintenance(Request $request): View
-    {
-        return view('admin.machines.index', ['machines' => Machine::paginate(1)]); // Placeholder
     }
 
     /**

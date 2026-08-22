@@ -55,7 +55,7 @@
 
 @can('menu.machines')
 {{-- 4. 機台管理 --}}
-<li x-data="{ open: localStorage.getItem('menu_machines') === 'true' || {{ request()->routeIs('admin.machines.*') || request()->routeIs('admin.maintenance.*') ? 'true' : 'false' }} }">
+<li x-data="{ open: localStorage.getItem('menu_machines') === 'true' || {{ request()->routeIs('admin.machines.*') ? 'true' : 'false' }} }">
     <button type="button" @click="if(sidebarCollapsed) { sidebarCollapsed = false; open = true; } else { open = !open; } localStorage.setItem('menu_machines', open)" class="luxury-nav-item w-full text-start group">
         <svg class="w-4 h-4 shrink-0 transition-colors {{ request()->routeIs('admin.machines.*') ? 'text-cyan-500' : 'text-slate-600 group-hover:text-cyan-500 dark:text-slate-300 dark:group-hover:text-cyan-400' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 01-2 2v4a2 2 0 012 2h14a2 2 0 012-2v-4a2 2 0 01-2-2m-2-4h.01M17 16h.01" /></svg>
         <div class="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">
@@ -76,19 +76,6 @@
             <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.machines.permissions') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.machines.permissions') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 <span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Machine Permissions') }}</span>
-            </a></li>
-            @endcan
-
-            @can('menu.machines.utilization')
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.machines.utilization') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.machines.utilization') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                <span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Utilization Rate') }}</span>
-            </a></li>
-            @endcan
-            @can('menu.machines.maintenance')
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.maintenance.*') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.maintenance.index') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01m-.01 4h.01" /></svg>
-                <span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Maintenance Records') }}</span>
             </a></li>
             @endcan
         </ul>

@@ -64,8 +64,6 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
         Route::get('/permissions/accounts/{user}', [App\Http\Controllers\Admin\Machine\MachinePermissionController::class, 'getAccountMachines'])->name('permissions.accounts.get');
         Route::post('/permissions/accounts/{user}', [App\Http\Controllers\Admin\Machine\MachinePermissionController::class, 'syncAccountMachines'])->name('permissions.accounts.sync');
 
-        Route::get('/utilization', [App\Http\Controllers\Admin\MachineController::class, 'utilization'])->name('utilization');
-        Route::get('/utilization-ajax/{id?}', [App\Http\Controllers\Admin\MachineController::class, 'utilizationData'])->name('utilization-ajax');
         Route::get('/{machine}/slots-ajax', [App\Http\Controllers\Admin\MachineController::class, 'slotsAjax'])->name('slots-ajax');
         Route::post('/{machine}/slots/expiry', [App\Http\Controllers\Admin\MachineController::class, 'updateSlotExpiry'])->name('slots.expiry.update');
         Route::post('/{machine}/slots/lock', [App\Http\Controllers\Admin\MachineController::class, 'toggleSlotLock'])->name('slots.lock.toggle');
@@ -78,13 +76,6 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
         Route::post('/{machine}/resolve-logs', [App\Http\Controllers\Admin\MachineController::class, 'resolveLogs'])->name('resolve-logs');
     });
     Route::resource('machines', App\Http\Controllers\Admin\MachineController::class);
-
-    // 維修管理
-    Route::prefix('maintenance')->name('maintenance.')->middleware('can:menu.machines.maintenance')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\MaintenanceController::class, 'index'])->name('index');
-        Route::get('/create/{serial_no?}', [App\Http\Controllers\Admin\MaintenanceController::class, 'create'])->name('create');
-        Route::post('/', [App\Http\Controllers\Admin\MaintenanceController::class, 'store'])->name('store');
-    });
 
     // 4. APP管理
     Route::prefix('app')->name('app.')->group(function () {
