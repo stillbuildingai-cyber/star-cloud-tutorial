@@ -35,14 +35,6 @@ Route::middleware('guest')->group(function () {
 // 公開機台分布地圖 (無需登入)
 Route::get('/machines/distribution', [App\Http\Controllers\Admin\BasicSettings\MachineSettingController::class, 'distribution'])->name('machines.distribution');
 
-// 公開取貨憑證頁面 (無需登入)
-Route::get('/p/{slug}', [App\Http\Controllers\Guest\PickupController::class, 'show'])->name('pickup.ticket')->middleware('throttle:60,1');
-Route::get('/t/{slug}', [App\Http\Controllers\Guest\PassCodeController::class, 'show'])->name('pass-code.ticket')->middleware('throttle:60,1');
-Route::get('/g/{slug}', [App\Http\Controllers\Guest\WelcomeGiftController::class, 'show'])->name('welcome-gift.ticket')->middleware('throttle:60,1');
-
-// 公開 QR 產生 (供訪客取貨/通行/好禮頁渲染，無需登入)
-Route::get('/qr-code', [App\Http\Controllers\Admin\QrCodeController::class, 'generate'])->name('qr-code.public')->middleware('throttle:120,1');
-
 Route::get('/dashboard', function () {
     return redirect()->route('admin.dashboard');
 })->middleware(['auth', 'auth.session', 'verified'])->name('dashboard');
@@ -51,25 +43,12 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
     // 1. 儀表板
     Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
 
-    // 2. 會員管理
-    Route::resource('members', App\Http\Controllers\MemberController::class)->only(['index']);
-    Route::resource('membership-tiers', App\Http\Controllers\Admin\MembershipTierController::class)->except(['show', 'create', 'edit']);
-    Route::resource('deposit-bonus-rules', App\Http\Controllers\Admin\DepositBonusRuleController::class)->except(['show', 'create', 'edit']);
-    Route::resource('point-rules', App\Http\Controllers\Admin\PointRuleController::class)->except(['show', 'create', 'edit']);
-    Route::resource('gift-definitions', App\Http\Controllers\Admin\GiftDefinitionController::class)->except(['show', 'create', 'edit']);
-
     // 3. 機台管理
     Route::prefix('machines')->name('machines.')->group(function () {
         Route::get('/permissions', [App\Http\Controllers\Admin\Machine\MachinePermissionController::class, 'index'])->name('permissions')->middleware('can:menu.machines.permissions');
         Route::get('/permissions/accounts/{user}', [App\Http\Controllers\Admin\Machine\MachinePermissionController::class, 'getAccountMachines'])->name('permissions.accounts.get');
         Route::post('/permissions/accounts/{user}', [App\Http\Controllers\Admin\Machine\MachinePermissionController::class, 'syncAccountMachines'])->name('permissions.accounts.sync');
 
-        Route::get('/{machine}/slots-ajax', [App\Http\Controllers\Admin\MachineController::class, 'slotsAjax'])->name('slots-ajax');
-        Route::post('/{machine}/slots/expiry', [App\Http\Controllers\Admin\MachineController::class, 'updateSlotExpiry'])->name('slots.expiry.update');
-        Route::post('/{machine}/slots/lock', [App\Http\Controllers\Admin\MachineController::class, 'toggleSlotLock'])->name('slots.lock.toggle');
-        // 機台專屬定價（獨立頁，列全公司目錄，可上貨前先定價）
-        Route::get('/{machine}/pricing', [App\Http\Controllers\Admin\MachineController::class, 'pricing'])->name('pricing');
-        Route::post('/{machine}/pricing', [App\Http\Controllers\Admin\MachineController::class, 'updatePricing'])->name('pricing.update');
         Route::get('/{machine}/logs-ajax', [App\Http\Controllers\Admin\MachineController::class, 'logsAjax'])->name('logs-ajax');
         Route::get('/{machine}/temperature-ajax', [App\Http\Controllers\Admin\MachineController::class, 'temperatureAjax'])->name('temperature-ajax');
         Route::get('/{machine}/ambient-temperature-ajax', [App\Http\Controllers\Admin\MachineController::class, 'ambientTemperatureAjax'])->name('ambient-temperature-ajax');
@@ -88,18 +67,6 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
     Route::get('/app-configs', [App\Http\Controllers\Admin\AppConfigController::class, 'index'])->name('app-configs.index');
     Route::put('/app-configs', [App\Http\Controllers\Admin\AppConfigController::class, 'update'])->name('app-configs.update');
 
-    // 7. 分析管理
-    Route::prefix('analysis')->name('analysis.')->group(function () {
-        Route::get('/machine-reports', [App\Http\Controllers\Admin\AnalysisController::class, 'machineReports'])->name('machine-reports')->middleware('can:menu.analysis.machine-reports');
-    });
-
-    // 8. 稽核管理
-    Route::prefix('audit')->name('audit.')->group(function () {
-        Route::get('/purchases', [App\Http\Controllers\Admin\AuditController::class, 'purchases'])->name('purchases');
-        Route::get('/transfers', [App\Http\Controllers\Admin\AuditController::class, 'transfers'])->name('transfers');
-        Route::get('/replenishments', [App\Http\Controllers\Admin\AuditController::class, 'replenishments'])->name('replenishments');
-    });
-
     // 9. 資料設定
     Route::prefix('data-config')->name('data-config.')->group(function () {
         Route::get('/sub-accounts', [App\Http\Controllers\Admin\PermissionController::class, 'accounts'])->name('sub-accounts')->middleware('can:menu.data-config.sub-accounts');
@@ -115,7 +82,6 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
         Route::post('/sub-account-roles', [App\Http\Controllers\Admin\PermissionController::class, 'storeRole'])->name('sub-account-roles.store')->middleware('can:menu.data-config.sub-accounts');
         Route::put('/sub-account-roles/{id}', [App\Http\Controllers\Admin\PermissionController::class, 'updateRole'])->name('sub-account-roles.update')->middleware('can:menu.data-config.sub-accounts');
         Route::delete('/sub-account-roles/{id}', [App\Http\Controllers\Admin\PermissionController::class, 'destroyRole'])->name('sub-account-roles.destroy')->middleware('can:menu.data-config.sub-accounts');
-        Route::get('/points', [App\Http\Controllers\Admin\DataConfigController::class, 'points'])->name('points');
     });
 
     // 10. 遠端管理
@@ -168,13 +134,18 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
 
             // 地址轉座標 (Geocoding Proxy)
             Route::post('/geocode', [App\Http\Controllers\Admin\GeocodingController::class, 'resolve'])->name('geocode');
+
+            // 排程管理（定時開機/關機）
+            Route::prefix('/{machine}/schedules')->name('schedules.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\BasicSettings\MachineScheduleController::class, 'index'])->name('index');
+                Route::post('/', [App\Http\Controllers\Admin\BasicSettings\MachineScheduleController::class, 'store'])->name('store');
+                Route::patch('/{schedule}/toggle', [App\Http\Controllers\Admin\BasicSettings\MachineScheduleController::class, 'toggle'])->name('toggle');
+                Route::delete('/{schedule}', [App\Http\Controllers\Admin\BasicSettings\MachineScheduleController::class, 'destroy'])->name('destroy');
+            });
         });
 
         // 機台型號設定
         Route::resource('machine-models', App\Http\Controllers\Admin\BasicSettings\MachineModelController::class)->except(['show']);
-
-        // QR Code 生成
-        Route::get('qr-code', [App\Http\Controllers\Admin\QrCodeController::class, 'generate'])->name('qr-code');
     });
 
     // 15. 權限設定

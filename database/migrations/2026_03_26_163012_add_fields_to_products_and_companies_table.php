@@ -11,17 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // 擴充 products 表
-        Schema::table('products', function (Blueprint $table) {
-            $table->string('spec')->nullable()->after('name')->comment('規格');
-            $table->string('manufacturer')->nullable()->after('barcode')->comment('生產公司');
-            $table->integer('track_limit')->default(0)->after('manufacturer')->comment('履帶貨道上限');
-            $table->integer('spring_limit')->default(0)->after('track_limit')->comment('彈簧貨道上限');
-            $table->decimal('member_price', 10, 2)->default(0)->after('price')->comment('會員價');
-            $table->json('metadata')->nullable()->after('is_active')->comment('進階 Metadata (點數、物料代碼等)');
-        });
-
         // 擴充 companies 表
+        // 註：products 表擴充區塊（spec/manufacturer/track_limit/spring_limit/member_price/metadata）
+        // 已隨教學版移除商品/販賣機模組而拿掉，companies.settings 為智慧插座教學版仍在用的
+        // 客戶功能設定 (品牌自訂等)，予以保留。
         Schema::table('companies', function (Blueprint $table) {
             $table->json('settings')->nullable()->after('note')->comment('客戶功能設定 (Feature Toggles)');
         });
@@ -32,17 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->dropColumn([
-                'spec',
-                'manufacturer',
-                'track_limit',
-                'spring_limit',
-                'member_price',
-                'metadata'
-            ]);
-        });
-
         Schema::table('companies', function (Blueprint $table) {
             $table->dropColumn('settings');
         });

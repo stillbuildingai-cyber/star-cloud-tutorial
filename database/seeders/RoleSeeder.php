@@ -19,17 +19,12 @@ class RoleSeeder extends Seeder
 
         // 建立權限
         $permissions = [
-            'menu.members',
             'menu.machines',
             'menu.machines.list',
             'menu.machines.permissions',
             'menu.app',
-            'menu.analysis',
-            'menu.analysis.machine-reports',
-            'menu.audit',
             'menu.data-config',
             'menu.data-config.sub-accounts',
-            'menu.data-config.points',
             'menu.remote',
             'menu.remote.commands',
             'menu.line',
@@ -60,8 +55,6 @@ class RoleSeeder extends Seeder
             'menu.machines',
             'menu.machines.list',
             'menu.machines.permissions',
-            'menu.analysis',
-            'menu.analysis.machine-reports',
             'menu.data-config',
             'menu.data-config.sub-accounts',
             'menu.remote',
@@ -79,17 +72,12 @@ class RoleSeeder extends Seeder
             ['is_system' => true, 'guard_name' => 'web']
         );
         $tenantAdmin->syncPermissions([
-            'menu.members',
             'menu.machines',
             'menu.machines.list',
             'menu.machines.permissions',
             'menu.app',
-            'menu.analysis',
-            'menu.analysis.machine-reports',
-            'menu.audit',
             'menu.data-config',
             'menu.data-config.sub-accounts',
-            'menu.data-config.points',
             'menu.remote',
             'menu.remote.commands',
             'menu.line',

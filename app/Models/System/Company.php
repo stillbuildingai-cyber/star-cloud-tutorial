@@ -45,14 +45,6 @@ class Company extends Model
     ];
 
     /**
-     * Get the contract history for the company.
-     */
-    public function contracts(): HasMany
-    {
-        return $this->hasMany(CompanyContract::class)->latest();
-    }
-
-    /**
      * Get the users for the company.
      */
     public function users(): HasMany
@@ -66,14 +58,6 @@ class Company extends Model
     public function machines(): HasMany
     {
         return $this->hasMany(Machine::class);
-    }
-
-    /**
-     * Get the products for the company.
-     */
-    public function products(): HasMany
-    {
-        return $this->hasMany(\App\Models\Product\Product::class);
     }
 
     /**

@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Models\Machine\Machine;
 use App\Models\Machine\MachineModel;
 use App\Models\System\Company;
-use App\Models\System\PaymentConfig;
 use App\Traits\ImageHandler;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -55,7 +54,7 @@ class MachineSettingController extends AdminController
 
             switch ($tab) {
                 case 'machines':
-                    $machineQuery = Machine::query()->with(['machineModel', 'paymentConfig', 'company']);
+                    $machineQuery = Machine::query()->with(['machineModel', 'company']);
                     $applyMachineFilters($machineQuery);
                     $machines = $machineQuery->latest()->paginate($per_page)->withQueryString();
                     break;
@@ -109,7 +108,7 @@ class MachineSettingController extends AdminController
 
         // SSR 模式：一次查好全部三個 Tab 的首頁資料（供 x-show 即時切換）
         $machineQuery = Machine::query()
-            ->with(['machineModel', 'paymentConfig', 'company']);
+            ->with(['machineModel', 'company']);
 
         if (in_array($tab, ['machines', 'system_settings'], true)) {
             $applyMachineFilters($machineQuery);
@@ -129,7 +128,6 @@ class MachineSettingController extends AdminController
 
         // 基礎下拉資料 (用於新增/編輯機台的彈窗)
         $models = MachineModel::select('id', 'name')->get();
-        $paymentConfigs = PaymentConfig::select('id', 'name')->get();
         $companies = Company::select('id', 'name', 'code')->orderBy('name')->get();
 
         // 同步系統設定彈窗的機台選擇器清單 (依 TenantScoped 自動租戶隔離)
@@ -140,7 +138,6 @@ class MachineSettingController extends AdminController
             'models_list',
             'users_list',
             'models',
-            'paymentConfigs',
             'companies',
             'allMachines',
             'tab'
@@ -157,7 +154,6 @@ class MachineSettingController extends AdminController
             'serial_no' => 'required|string|unique:machines,serial_no',
             'company_id' => 'nullable|exists:companies,id',
             'machine_model_id' => 'required|exists:machine_models,id',
-            'payment_config_id' => 'nullable|exists:payment_configs,id',
             'key_no' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:255',
@@ -194,10 +190,9 @@ class MachineSettingController extends AdminController
     public function edit(Machine $machine): View
     {
         $models = MachineModel::select('id', 'name')->get();
-        $paymentConfigs = PaymentConfig::select('id', 'name')->get();
         $companies = \App\Models\System\Company::select('id', 'name', 'code')->get();
 
-        return view('admin.basic-settings.machines.edit', compact('machine', 'models', 'paymentConfigs', 'companies'));
+        return view('admin.basic-settings.machines.edit', compact('machine', 'models', 'companies'));
     }
 
     /**
@@ -233,7 +228,6 @@ class MachineSettingController extends AdminController
                 'cash_module_enabled' => 'boolean',
                 'ambient_temp_monitoring_enabled' => 'boolean',
                 'machine_model_id' => 'required|exists:machine_models,id',
-                'payment_config_id' => 'nullable|exists:payment_configs,id',
                 'location' => 'nullable|string|max:255',
                 'address' => 'nullable|string|max:255',
                 'latitude' => 'nullable|numeric|between:-90,90',
@@ -482,10 +476,9 @@ class MachineSettingController extends AdminController
             // 同時更新 model 的屬性欄位 (以防 mutator 同步，以及確保 dirty check 正確)
             $machine->update(array_merge($data, ['updater_id' => auth()->id()]));
 
-            // 語系異動：失效公司語系聯集快取並重建商品目錄 i18n（B012 下發內容隨之更新）
+            // 語系異動：失效公司語系聯集快取（教學版已無商品目錄快取需重建）
             if ($languagesChanged) {
                 \App\Models\System\Company::forgetActiveLocales($machine->company_id);
-                app(\App\Services\Product\ProductCatalogService::class)->rebuildCache($machine->company_id);
             }
 
             if ($request->expectsJson()) {

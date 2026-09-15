@@ -19,7 +19,6 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             AdminUserSeeder::class,
             MachineSeeder::class,
-            MemberSeeder::class,
             SmartSocketDemoSeeder::class,
         ]);
     }

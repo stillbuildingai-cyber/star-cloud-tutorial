@@ -29,7 +29,7 @@ class RemoteController extends Controller
         $selectedMachine = null;
 
         // --- 1. 機台列表處理 (New Command Tab) ---
-        $machineQuery = Machine::withCount(['slots'])->orderBy('last_heartbeat_at', 'desc')->orderBy('id', 'desc');
+        $machineQuery = Machine::query()->orderBy('last_heartbeat_at', 'desc')->orderBy('id', 'desc');
 
         if ($request->filled('search') && $request->input('tab') === 'list') {
             $search = $request->input('search');
@@ -95,7 +95,6 @@ class RemoteController extends Controller
         // --- 3. 特定機台詳情處理 ---
         if ($request->has('machine_id')) {
             $selectedMachine = Machine::with([
-                'slots.product',
                 'commands' => function ($query) {
                     $query->where('command_type', '!=', 'reload_stock')
                         ->latest()
@@ -142,54 +141,44 @@ class RemoteController extends Controller
     {
         $validated = $request->validate([
             'machine_id' => 'required|exists:machines,id',
-            'command_type' => 'required|string|in:reboot,reboot_force,reboot_card,checkout,lock,unlock,change,dispense,fanon,fanoff,fanauto,power_on,power_off,power_toggle,power_status',
+            'command_type' => 'required|string|in:reboot,reboot_force,reboot_card,checkout,lock,unlock,change,fanon,fanoff,fanauto,power_on,power_off,power_toggle,power_status',
             'amount' => 'nullable|integer|min:0',
-            'slot_no' => 'nullable|string',
             'note' => 'nullable|string|max:255',
         ]);
 
-        if ($validated['command_type'] === 'dispense') {
-            $this->machineService->dispatchDispense(
-                Machine::findOrFail($validated['machine_id']),
-                $validated['slot_no'],
-                auth()->id(),
-                $validated['note'] ?? null
-            );
-        } else {
-            $payload = [];
-            if ($validated['command_type'] === 'change') {
-                $payload['amount'] = $validated['amount'];
-            }
+        $payload = [];
+        if ($validated['command_type'] === 'change') {
+            $payload['amount'] = $validated['amount'];
+        }
 
-            // 指令去重：將同機台、同類期的 pending 指令標記為「已取代」
-            RemoteCommand::where('machine_id', $validated['machine_id'])
-                ->where('command_type', $validated['command_type'])
-                ->where('status', 'pending')
-                ->update([
-                    'status' => 'superseded',
-                    'note' => __('Superseded by new command'),
-                    'executed_at' => now(),
-                ]);
-
-            $command = RemoteCommand::create([
-                'machine_id' => $validated['machine_id'],
-                'user_id' => auth()->id(),
-                'command_type' => $validated['command_type'],
-                'payload' => $payload,
-                'status' => 'pending',
-                'remark' => $validated['note'] ?? null,
+        // 指令去重：將同機台、同類期的 pending 指令標記為「已取代」
+        RemoteCommand::where('machine_id', $validated['machine_id'])
+            ->where('command_type', $validated['command_type'])
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'superseded',
+                'note' => __('Superseded by new command'),
+                'executed_at' => now(),
             ]);
 
-            // 推播 MQTT 指令
-            $machine = Machine::find($validated['machine_id']);
-            if ($machine) {
-                $this->mqttService->pushCommand(
-                    $machine->serial_no,
-                    $command->command_type,
-                    $command->payload,
-                    (string) $command->id
-                );
-            }
+        $command = RemoteCommand::create([
+            'machine_id' => $validated['machine_id'],
+            'user_id' => auth()->id(),
+            'command_type' => $validated['command_type'],
+            'payload' => $payload,
+            'status' => 'pending',
+            'remark' => $validated['note'] ?? null,
+        ]);
+
+        // 推播 MQTT 指令
+        $machine = Machine::find($validated['machine_id']);
+        if ($machine) {
+            $this->mqttService->pushCommand(
+                $machine->serial_no,
+                $command->command_type,
+                $command->payload,
+                (string) $command->id
+            );
         }
 
         session()->flash('success', __('Command has been queued successfully.'));

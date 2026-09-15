@@ -7,11 +7,8 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\Machine\ProcessHeartbeat;
 use App\Jobs\Machine\ProcessMachineError;
-use App\Jobs\Machine\ProcessTransaction;
 use App\Jobs\Machine\ProcessStatus;
 use App\Jobs\Machine\ProcessMachineEvent;
-use App\Jobs\Transaction\ProcessInvoice;
-use App\Jobs\Transaction\ProcessDispenseRecord;
 use App\Jobs\Machine\ProcessCommandAck;
 
 class ListenMqttQueue extends Command
@@ -108,70 +105,12 @@ class ListenMqttQueue extends Command
             case 'error':
                 ProcessMachineError::dispatch($serialNo, $payload);
                 break;
-            case 'transaction':
-                $this->dispatchTransactionByAction($serialNo, $payload);
-                break;
             case 'command_ack':
                 // B055: 機台出貨結果 ACK (machine/{serial_no}/command/ack)
                 ProcessCommandAck::dispatch($serialNo, $payload);
                 break;
             default:
                 Log::notice("MQTT Listen: Unknown message type [{$type}]", ['data' => $data]);
-                break;
-        }
-    }
-
-    /**
-     * 根據交易 Payload 中的 action 欄位，分派至對應的 Job
-     * - create (或無 action): B600 交易建立
-     * - invoice: B601 發票紀錄
-     * - dispense: B602 出貨結果
-     */
-    protected function dispatchTransactionByAction(string $serialNo, array $payload): void
-    {
-        Log::debug("MQTT Transaction incoming payload", [
-            'serial_no' => $serialNo,
-            'payload' => $payload
-        ]);
-
-        $rawAction = $payload['action'] ?? 'create';
-        $action = strtolower(trim($rawAction));
-        
-        // 超級偵錯：檢查 action 字串的每一個位元組
-        $hex = bin2hex($rawAction);
-        Log::debug("MQTT Action Debug", [
-            'raw' => $rawAction,
-            'hex' => $hex,
-            'processed' => $action,
-            'match_finalize' => ($action === 'finalize' ? 'YES' : 'NO')
-        ]);
-
-        switch ($action) {
-            case 'invoice':
-                // B601: 發票紀錄 — ProcessInvoice 期望接收含 serial_no 的 data 陣列
-                $payload['serial_no'] = $serialNo;
-                ProcessInvoice::dispatch($payload);
-                Log::info("MQTT Transaction [invoice] dispatched", ['serial_no' => $serialNo]);
-                break;
-
-            case 'dispense':
-                // B602: 出貨結果 — ProcessDispenseRecord 期望接收含 serial_no 的 data 陣列
-                $payload['serial_no'] = $serialNo;
-                ProcessDispenseRecord::dispatch($payload);
-                Log::info("MQTT Transaction [dispense] dispatched", ['serial_no' => $serialNo]);
-                break;
-
-            case 'finalize':
-                // 新增：B600/B601/B602 統整上報
-                \App\Jobs\Transaction\ProcessTransactionFinalized::dispatch($serialNo, $payload);
-                Log::info("MQTT Transaction [finalize] dispatched", ['serial_no' => $serialNo]);
-                break;
-
-            case 'create':
-            default:
-                // B600: 交易建立（既有邏輯，向後相容無 action 欄位的舊格式）
-                ProcessTransaction::dispatch($serialNo, $payload);
-                Log::info("MQTT Transaction [create] dispatched", ['serial_no' => $serialNo]);
                 break;
         }
     }

@@ -16,8 +16,7 @@ class CompanyController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Company::query()->withCount(['users', 'machines'])
-            ->with(['contracts.creator:id,name']);
+        $query = Company::query()->withCount(['users', 'machines']);
 
         // 搜尋
         if ($search = $request->input('search')) {
@@ -102,19 +101,6 @@ class CompanyController extends Controller
                 'settings' => $validated['settings'] ?? [],
             ]);
 
-            // 記錄合約歷程
-            $company->contracts()->create([
-                'type' => $company->original_type,
-                'start_date' => $company->start_date,
-                'end_date' => $company->end_date,
-                'warranty_start_date' => $company->warranty_start_date,
-                'warranty_end_date' => $company->warranty_end_date,
-                'software_start_date' => $company->software_start_date,
-                'software_end_date' => $company->software_end_date,
-                'note' => __('Initial contract registration'),
-                'creator_id' => auth()->id(),
-            ]);
-
             // 如果有填寫帳號資訊，則建立管理員帳號
             if (!empty($validated['admin_username']) && !empty($validated['admin_password'])) {
                 $user = \App\Models\System\User::create([
@@ -188,21 +174,8 @@ class CompanyController extends Controller
 
         DB::transaction(function () use ($validated, $company) {
             $company->update($validated);
-
-            // 記錄合約歷程
-            $company->contracts()->create([
-                'type' => $company->current_type,
-                'start_date' => $company->start_date,
-                'end_date' => $company->end_date,
-                'warranty_start_date' => $company->warranty_start_date,
-                'warranty_end_date' => $company->warranty_end_date,
-                'software_start_date' => $company->software_start_date,
-                'software_end_date' => $company->software_end_date,
-                'note' => $validated['note'] ?? __('Contract information updated'),
-                'creator_id' => auth()->id(),
-            ]);
         });
-        
+
         // 分支邏輯：若停用客戶，連帶停用其所有帳號
         if ($validated['status'] == 0) {
             $company->users()->update(['status' => 0]);

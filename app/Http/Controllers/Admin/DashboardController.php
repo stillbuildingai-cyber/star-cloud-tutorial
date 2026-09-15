@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Transaction\Order;
 use App\Models\Machine\Machine;
+use App\Models\Machine\MachineLog;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -17,37 +16,18 @@ class DashboardController extends Controller
         if ($perPage <= 0)
             $perPage = 10;
 
-        // 從資料庫獲取真實統計數據
+        // 從資料庫獲取真實統計數據 (智慧插座艦隊相關，教學版不含販賣機營收/庫存數據)
+        $totalMachines = Machine::count();
         $activeMachines = Machine::online()->count();
         $offlineMachines = Machine::offline()->count();
         $alertsPending = Machine::hasAnyAlert()->count();
-        $memberCount = \App\Models\Member\Member::count();
 
-        // 交易營收統計 (真實數據)
-        $todayRevenue = Order::where('payment_status', Order::PAYMENT_STATUS_SUCCESS)
-            ->whereDate('payment_at', Carbon::today())
-            ->sum('pay_amount');
-
-        $yesterdayRevenue = Order::where('payment_status', Order::PAYMENT_STATUS_SUCCESS)
-            ->whereDate('payment_at', Carbon::yesterday())
-            ->sum('pay_amount');
-
-        $dayBeforeRevenue = Order::where('payment_status', Order::PAYMENT_STATUS_SUCCESS)
-            ->whereDate('payment_at', Carbon::yesterday()->subDay())
-            ->sum('pay_amount');
-
-        $monthlyRevenue = Order::where('payment_status', Order::PAYMENT_STATUS_SUCCESS)
-            ->whereMonth('payment_at', Carbon::now()->month)
-            ->whereYear('payment_at', Carbon::now()->year)
-            ->sum('pay_amount');
-
-        // 計算昨日增長趨勢 (百分比)
-        $yesterdayTrend = 0;
-        if ($yesterdayRevenue > 0) {
-            $yesterdayTrend = (($todayRevenue - $yesterdayRevenue) / $yesterdayRevenue) * 100;
-        } elseif ($todayRevenue > 0) {
-            $yesterdayTrend = 100;
-        }
+        // 最近機台日誌 (取代原本的販賣機營收卡片，遵循機台可視範圍的租戶隔離)
+        $recentLogs = MachineLog::whereIn('machine_id', Machine::pluck('id'))
+            ->with('machine:id,name,serial_no')
+            ->latest()
+            ->limit(10)
+            ->get();
 
         // 獲取機台列表 (分頁)
         $machines = Machine::when($request->search, function ($query, $search) {
@@ -56,26 +36,16 @@ class DashboardController extends Controller
                     ->orWhere('serial_no', 'like', "%{$search}%");
             });
         })
-            ->withSum('slots', 'stock')
-            ->withSum('slots', 'max_stock')
-            ->withSum(['orders as today_sales_sum' => function($query) {
-                $query->whereDate('payment_at', now()->toDateString())
-                    ->where('payment_status', Order::PAYMENT_STATUS_SUCCESS);
-            }], 'pay_amount')
             ->orderByDesc('last_heartbeat_at')
             ->paginate($perPage)
             ->withQueryString();
 
         return view('admin.dashboard', compact(
+            'totalMachines',
             'activeMachines',
             'offlineMachines',
             'alertsPending',
-            'memberCount',
-            'todayRevenue',
-            'yesterdayRevenue',
-            'dayBeforeRevenue',
-            'monthlyRevenue',
-            'yesterdayTrend',
+            'recentLogs',
             'machines'
         ));
     }

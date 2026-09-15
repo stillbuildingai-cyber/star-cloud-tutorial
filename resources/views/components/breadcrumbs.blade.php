@@ -16,17 +16,10 @@
             // 定義大模組映射表 (路由前綴 => [Label, IndexRoute])
             $moduleMap = [
                 'profile' => [__('Profile Settings'), 'profile.edit'],
-                'admin.members' => [__('Member Management'), 'admin.members.index'],
-                'admin.membership-tiers' => [__('Member Management'), 'admin.membership-tiers.index'],
-                'admin.deposit-bonus-rules' => [__('Member Management'), 'admin.deposit-bonus-rules.index'],
-                'admin.point-rules' => [__('Member Management'), 'admin.point-rules.index'],
-                'admin.gift-definitions' => [__('Member Management'), 'admin.gift-definitions.index'],
                 'admin.machines' => [__('Machine Management'), 'admin.machines.index'],
                 'admin.app' => [__('APP Management'), 'admin.app-configs.index'],
                 'admin.warehouses' => [__('Warehouse Management'), 'admin.warehouses.index'],
                 'admin.sales' => [__('Sales Management'), 'admin.sales.index'],
-                'admin.analysis' => [__('Analysis Management'), 'admin.analysis.machine-reports'],
-                'admin.audit' => [__('Audit Management'), 'admin.audit.purchases'],
                 'admin.data-config' => [__('Data Configuration'), 'admin.data-config.products.index'],
                 'admin.remote' => [__('Remote Management'), 'admin.remote.index'],
                 'admin.line' => [__('Line Management'), 'admin.line.official-account'],
@@ -70,12 +63,9 @@
             
             $pageLabel = match($lastSegment) {
                 'index' => match($segments[1] ?? '') {
-                    'members' => __('Member List'),
                     'machines' => __('Machine List'),
                     'warehouses' => __('Warehouse Overview'),
                     'sales' => __('Sales Records'),
-                    'analysis' => __('Analysis Management'),
-                    'audit' => __('Audit Management'),
                     'maintenance' => __('Maintenance Records'),
                     'data-config' => match($segments[2] ?? '') {
                         'products' => __('Product Management'),
@@ -104,7 +94,6 @@
                 'logs' => __('Machine Logs'),
                 'permissions' => __('Machine Permissions'),
                 'utilization' => __('Utilization Rate'),
-                'pricing' => __('Machine Pricing'),
                 'expiry' => __('Expiry Management'),
                 'maintenance' => __('Maintenance Records'),
                 'ui-elements' => __('UI Elements'),
@@ -123,7 +112,6 @@
                 'store-gifts' => __('Store Gifts'),
                 'pharmacy-pickup' => __('menu.sales.pharmacy-pickup'),
                 'change-stock' => __('Change Stock'),
-                'machine-reports' => __('Machine Reports'),
                 'product-reports' => __('Product Reports'),
                 'survey-analysis' => __('Survey Analysis'),
                 'products' => __('Product Management'),

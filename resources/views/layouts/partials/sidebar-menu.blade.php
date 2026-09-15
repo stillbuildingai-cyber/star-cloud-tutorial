@@ -28,29 +28,6 @@
     </div>
 </li>
 
-{{-- 
-@can('menu.members')
-3. 會員管理
-<li x-data="{ open: localStorage.getItem('menu_members') === 'true' || {{ request()->routeIs('admin.members.*') || request()->routeIs('admin.membership-tiers.*') || request()->routeIs('admin.deposit-bonus-rules.*') || request()->routeIs('admin.point-rules.*') || request()->routeIs('admin.gift-definitions.*') ? 'true' : 'false' }} }">
-    <button type="button" @click="if(sidebarCollapsed) { sidebarCollapsed = false; open = true; } else { open = !open; } localStorage.setItem('menu_members', open)" class="luxury-nav-item w-full text-start group">
-        <svg class="w-4 h-4 shrink-0 transition-colors {{ request()->routeIs('admin.members.*') ? 'text-cyan-500' : 'text-slate-600 group-hover:text-cyan-500 dark:text-slate-300 dark:group-hover:text-cyan-400' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-        <div class="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">
-            <span>{{ __('Member Management') }}</span>
-            <svg class="shrink-0 w-4 h-4 transition-transform duration-300 text-slate-600 dark:text-slate-300" :class="{ 'rotate-180': open, 'rotate-0': !open }" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-    </button>
-    <div x-show="open && !sidebarCollapsed" x-collapse>
-        <ul class="luxury-submenu" data-sidebar-sub>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.members.index') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.members.index') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Member List') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.membership-tiers.*') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.membership-tiers.index') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Membership Tiers') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.deposit-bonus-rules.*') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.deposit-bonus-rules.index') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Deposit Bonus') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.point-rules.*') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.point-rules.index') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Point Rules') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.gift-definitions.*') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.gift-definitions.index') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Gift Definitions') }}</span></a></li>
-        </ul>
-    </div>
-</li>
-@endcan
---}}
 
 
 @can('menu.machines')
@@ -109,51 +86,7 @@
 --}}
 
 
-@can('menu.analysis')
-{{-- 8. 分析管理 --}}
-<li x-data="{ open: localStorage.getItem('menu_analysis') === 'true' || {{ request()->routeIs('admin.analysis.*') ? 'true' : 'false' }} }">
-    <button type="button" @click="if(sidebarCollapsed) { sidebarCollapsed = false; open = true; } else { open = !open; } localStorage.setItem('menu_analysis', open)" class="luxury-nav-item w-full text-start group">
-        <svg class="w-4 h-4 shrink-0 transition-colors {{ request()->routeIs('admin.analysis.*') ? 'text-cyan-500' : 'text-slate-600 group-hover:text-cyan-500 dark:text-slate-300 dark:group-hover:text-cyan-400' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>
-        <div class="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">
-            <span>{{ __('Analysis Management') }}</span>
-            <svg class="shrink-0 w-4 h-4 transition-transform duration-300 text-slate-600 dark:text-slate-300" :class="{ 'rotate-180': open, 'rotate-0': !open }" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-    </button>
-    <div x-show="open && !sidebarCollapsed" x-collapse>
-        <ul class="luxury-submenu" data-sidebar-sub>
-            @can('menu.analysis.machine-reports')
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.analysis.machine-reports') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.analysis.machine-reports') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /><path d="M6 12l3-3 3 3 6-6" /></svg>
-                <span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Machine Reports') }}</span>
-            </a></li>
-            @endcan
-        </ul>
-    </div>
-</li>
-@endcan
 
-
-{{--
-@can('menu.audit')
-9. 稽核管理
-<li x-data="{ open: localStorage.getItem('menu_audit') === 'true' || {{ request()->routeIs('admin.audit.*') ? 'true' : 'false' }} }">
-    <button type="button" @click="if(sidebarCollapsed) { sidebarCollapsed = false; open = true; } else { open = !open; } localStorage.setItem('menu_audit', open)" class="luxury-nav-item w-full text-start group">
-        <svg class="w-4 h-4 shrink-0 transition-colors {{ request()->routeIs('admin.audit.*') ? 'text-cyan-500' : 'text-slate-600 group-hover:text-cyan-500 dark:text-slate-300 dark:group-hover:text-cyan-400' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-        <div class="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">
-            <span>{{ __('Audit Management') }}</span>
-            <svg class="shrink-0 w-4 h-4 transition-transform duration-300 text-slate-600 dark:text-slate-300" :class="{ 'rotate-180': open, 'rotate-0': !open }" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-    </button>
-    <div x-show="open && !sidebarCollapsed" x-collapse>
-        <ul class="luxury-submenu" data-sidebar-sub>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.audit.purchases') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.audit.purchases') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Purchase Audit') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.audit.transfers') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.audit.transfers') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Transfer Audit') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.audit.replenishments') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.audit.replenishments') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Replenishment Audit') }}</span></a></li>
-        </ul>
-    </div>
-</li>
-@endcan
---}}
 
 
 @can('menu.data-config')
@@ -175,14 +108,6 @@
             </a></li>
             @endcan
 
-            {{-- 
-            @can('menu.data-config.points')
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.data-config.points') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.data-config.points') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Point Settings') }}</span>
-            </a></li>
-            @endcan
-            --}}
 
         </ul>
     </div>
@@ -266,26 +191,6 @@
 @endcan
 --}}
 
-{{-- 
-@can('menu.special-permission')
-<li x-data="{ open: localStorage.getItem('menu_special_permission') === 'true' || {{ request()->routeIs('admin.special-permission.*') ? 'true' : 'false' }} }">
-    <button type="button" @click="if(sidebarCollapsed) { sidebarCollapsed = false; open = true; } else { open = !open; } localStorage.setItem('menu_special_permission', open)" class="luxury-nav-item w-full text-start group">
-        <svg class="w-4 h-4 shrink-0 transition-colors {{ request()->routeIs('admin.special-permission.*') ? 'text-cyan-500' : 'text-slate-600 group-hover:text-cyan-500 dark:text-slate-300 dark:group-hover:text-cyan-400' }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-        <div class="flex flex-1 items-center justify-between whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">
-            <span>{{ __('Special Permission') }}</span>
-            <svg class="shrink-0 w-4 h-4 transition-transform duration-300 text-slate-600 dark:text-slate-300" :class="{ 'rotate-180': open, 'rotate-0': !open }" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-    </button>
-    <div x-show="open && !sidebarCollapsed" x-collapse>
-        <ul class="luxury-submenu" data-sidebar-sub>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.special-permission.clear-stock') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.special-permission.clear-stock') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Clear Stock') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.special-permission.apk-versions') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.special-permission.apk-versions') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('APK Versions') }}</span></a></li>
-            <li><a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm transition-colors rounded-lg {{ request()->routeIs('admin.special-permission.discord-notifications') ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-white/5' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white' }}" href="{{ route('admin.special-permission.discord-notifications') }}"><span class="whitespace-nowrap overflow-hidden transition-all duration-300" :class="sidebarCollapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'">{{ __('Discord Notifications') }}</span></a></li>
-        </ul>
-    </div>
-</li>
-@endcan
---}}
 
 @if(auth()->user()->isSystemAdmin() || (auth()->user()->isTenant() && auth()->user()->can('menu.basic.machines')))
 {{-- 14.5. 基本設定 --}}

@@ -2,8 +2,7 @@
 
 @section('content')
 <div class="space-y-2 pb-20" x-data="{
-    showModal: false, 
-    showHistoryModal: false, 
+    showModal: false,
     showSettingsModal: false,
     editing: false, 
     sidebarView: 'detail', 
@@ -95,11 +94,10 @@
         software_start_date: '', software_end_date: '',
         status: 1, note: '',
         settings: { enable_material_code: false, enable_points: false, enable_custom_branding: false },
-        users_count: 0, machines_count: 0,
-        contracts: []
+        users_count: 0, machines_count: 0
     },
     openDetailSidebar(company) {
-        this.detailCompany = { 
+        this.detailCompany = {
             ...company,
             settings: {
                 enable_material_code: company.settings?.enable_material_code || false,
@@ -109,32 +107,6 @@
         };
         this.sidebarView = 'detail';
         this.showDetail = true;
-    },
-    openHistorySidebar(company) {
-        this.detailCompany = { 
-            ...company,
-            settings: {
-                enable_material_code: company.settings?.enable_material_code || false,
-                enable_points: company.settings?.enable_points || false,
-                enable_custom_branding: company.settings?.enable_custom_branding || false
-            }
-        };
-        this.sidebarView = 'history';
-        this.showDetail = true;
-    },
-    openFullHistory() {
-        this.showHistoryModal = true;
-    },
-    openHistory(company) {
-        this.detailCompany = { 
-            ...company,
-            settings: {
-                enable_material_code: company.settings?.enable_material_code || false,
-                enable_points: company.settings?.enable_points || false,
-                enable_custom_branding: company.settings?.enable_custom_branding || false
-            }
-        };
-        this.showHistoryModal = true;
     },
     openSettingsModal(company) {
         this.currentCompany = { 
@@ -1242,7 +1214,7 @@
                         <!-- Header -->
                         <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
                             <div>
-                                <h2 class="text-xl font-black text-slate-800 dark:text-white tracking-tight" x-text="sidebarView === 'history' ? '{{ __('Contract History Detail') }}' : '{{ __('Customer Details') }}'"></h2>
+                                <h2 class="text-xl font-black text-slate-800 dark:text-white tracking-tight">{{ __('Customer Details') }}</h2>
                                 <div class="flex items-center gap-2 mt-1">
                                     <p class="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]" x-text="detailCompany.name"></p>
                                     <span class="text-xs font-mono font-black text-cyan-500 px-1.5 py-0.5 bg-cyan-500/10 rounded" x-text="detailCompany.code"></span>
@@ -1257,15 +1229,6 @@
 
                         <!-- Body -->
                         <div class="flex-1 overflow-y-auto px-8 pt-4 pb-8 space-y-5 custom-scrollbar">
-                          <!-- Tab Switcher -->
-                          <div class="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800/60 rounded-xl">
-                              <button @click="sidebarView = 'detail'" 
-                                  :class="sidebarView === 'detail' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'"
-                                  class="flex-1 py-2.5 px-3 text-xs font-black uppercase tracking-[0.15em] rounded-lg transition-all">{{ __('Customer Details') }}</button>
-                              <button @click="sidebarView = 'history'" 
-                                  :class="sidebarView === 'history' ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'"
-                                  class="flex-1 py-2.5 px-3 text-xs font-black uppercase tracking-[0.15em] rounded-lg transition-all">{{ __('Contract History Detail') }}</button>
-                          </div>
 
                           <!-- Detail View -->
                           <div x-show="sidebarView === 'detail'" class="space-y-8">
@@ -1441,80 +1404,6 @@
                             </section>
                           </div>
 
-                          <!-- History View -->
-                          <div x-show="sidebarView === 'history'" class="space-y-6">
-                            <template x-for="(contract, index) in (detailCompany.contracts || [])" :key="contract.id">
-                                <div class="bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800/80 overflow-hidden">
-                                    <!-- Card Header -->
-                                    <div class="px-5 py-3 bg-white dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                                        <div class="flex items-center gap-2.5">
-                                            <div class="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-[9px] font-black text-slate-500" x-text="'#' + (detailCompany.contracts.length - index)"></div>
-                                            <div>
-                                                <p class="text-[12px] font-black text-slate-700 dark:text-slate-200" x-text="new Date(contract.created_at).toLocaleString()"></p>
-                                                <div class="flex items-center gap-1.5 mt-0.5">
-                                                    <span :class="contract.type === 'lease' ? 'text-blue-500 bg-blue-500/10' : 'text-amber-500 bg-amber-500/10'" 
-                                                        class="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
-                                                        x-text="contract.type === 'lease' ? '{{ __('Lease') }}' : '{{ __('Buyout') }}'"></span>
-                                                    <span class="text-[9px] text-slate-400">{{ __('by') }} <span class="text-slate-600 dark:text-slate-300" x-text="contract.creator?.name || 'System'"></span></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <template x-if="index === 0">
-                                            <span class="px-2 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest rounded-full">{{ __('Current') }}</span>
-                                        </template>
-                                    </div>
-
-                                    <!-- Card Body -->
-                                    <div class="p-5 space-y-4">
-                                        <!-- Lease dates -->
-                                        <template x-if="contract.type === 'lease'">
-                                            <div class="grid grid-cols-2 gap-4">
-                                                <div class="space-y-1.5">
-                                                    <p class="text-[12px] font-black text-slate-400 uppercase tracking-widest">{{ __('Contract Start') }}</p>
-                                                    <p class="text-sm font-black text-slate-700 dark:text-white font-mono" x-text="contract.start_date?.substring(0, 10) || '-'"></p>
-                                                </div>
-                                                <div class="space-y-1.5">
-                                                    <p class="text-[12px] font-black text-slate-400 uppercase tracking-widest">{{ __('Contract End') }}</p>
-                                                    <p class="text-sm font-black text-slate-700 dark:text-white font-mono" x-text="contract.end_date?.substring(0, 10) || '{{ __('Unlimited') }}'"></p>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <!-- Buyout dates -->
-                                        <template x-if="contract.type === 'buyout'">
-                                            <div class="grid grid-cols-1 gap-4">
-                                                <div class="p-4 bg-amber-50/40 dark:bg-amber-500/5 rounded-2xl border border-amber-100/50 dark:border-amber-500/10">
-                                                    <p class="text-[12px] font-black text-amber-600 uppercase tracking-widest mb-2">{{ __('Warranty Service') }}</p>
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="text-sm font-black text-slate-700 dark:text-slate-200 font-mono" x-text="contract.warranty_start_date?.substring(0, 10) || '-'"></span>
-                                                        <span class="text-slate-400 font-bold">~</span>
-                                                        <span class="text-sm font-black text-slate-800 dark:text-white font-mono" x-text="contract.warranty_end_date?.substring(0, 10) || '-'"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="p-4 bg-indigo-50/40 dark:bg-indigo-500/5 rounded-2xl border border-indigo-100/50 dark:border-indigo-500/10">
-                                                    <p class="text-[12px] font-black text-indigo-600 uppercase tracking-widest mb-2">{{ __('Software Service') }}</p>
-                                                    <div class="flex items-center gap-2">
-                                                        <span class="text-sm font-black text-slate-700 dark:text-slate-200 font-mono" x-text="contract.software_start_date?.substring(0, 10) || '-'"></span>
-                                                        <span class="text-slate-400 font-bold">~</span>
-                                                        <span class="text-sm font-black text-slate-800 dark:text-white font-mono" x-text="contract.software_end_date?.substring(0, 10) || '-'"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </template>
-                                        <!-- Note -->
-                                        <div class="pt-2 border-t border-slate-100/50 dark:border-slate-800/50" x-show="contract.note">
-                                            <p class="text-[9px] font-bold text-slate-400 italic" x-text="contract.note"></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-
-                            <div x-show="!(detailCompany.contracts || []).length" class="py-12 text-center">
-                                <div class="w-14 h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mx-auto mb-3 border border-slate-100 dark:border-slate-800">
-                                    <svg class="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
-                                </div>
-                                <p class="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{{ __('No history records') }}</p>
-                            </div>
-                          </div>
                         </div>
 
                         <!-- Footer -->

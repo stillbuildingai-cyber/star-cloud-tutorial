@@ -7,7 +7,6 @@
         return {
             showLogPanel: false,
             showEditModal: false,
-            showInventoryPanel: false,
             showResolveConfirm: false,
             editMachineId: '',
             editMachineName: '',
@@ -46,15 +45,12 @@
             currentMachineCardTerminalEnabled: false,
             logs: [],
             loading: false,
-            inventoryLoading: false,
             startDate: '',
             endDate: '',
             selectedLevel: '',
             tab: 'list',
             viewMode: 'fleet',
             selectedMachine: null,
-            slots: [],
-            inventorySlots: [],
             currentPage: 1,
             lastPage: 1,
             totalLogs: 0,
@@ -99,7 +95,6 @@
                 if (!this.currentMachineCardTerminalEnabled && this.activeTab === 'card_terminal') {
                     this.activeTab = 'status';
                 }
-                this.slots = [];
                 this.showLogPanel = true;
                 this.activeTab = 'status';
                 await this.fetchLogs();
@@ -336,39 +331,6 @@
                 finally { this.loading = false; }
             },
 
-            async openCabinet(id) {
-                this.loading = true;
-                this.viewMode = 'cabinet';
-                try {
-                    const res = await fetch('/admin/machines/' + id + '/slots-ajax');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.selectedMachine = data.machine;
-                        this.slots = data.slots;
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                } catch (e) { console.error('openCabinet error:', e); }
-                finally { this.loading = false; }
-            },
-
-            // 庫存一覽面板 (唯讀)
-            async openInventoryPanel(id, sn, name) {
-                this.currentMachineId = id;
-                this.currentMachineSn = sn;
-                this.currentMachineName = name;
-                this.inventorySlots = [];
-                this.showInventoryPanel = true;
-                this.inventoryLoading = true;
-                try {
-                    const res = await fetch('/admin/machines/' + id + '/slots-ajax');
-                    const data = await res.json();
-                    if (data.success) {
-                        this.inventorySlots = data.slots;
-                    }
-                } catch (e) { console.error('openInventoryPanel error:', e); }
-                finally { this.inventoryLoading = false; }
-            },
-
             confirmResolve() {
                 this.showResolveConfirm = true;
             },
@@ -405,26 +367,12 @@
                 return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
             },
 
-            getSlotColorClass(slot) {
-                if (!slot.expiry_date) return 'bg-slate-50/50 dark:bg-slate-800/50 text-slate-400 border-slate-200/60 dark:border-slate-700/50';
-                const todayStr = new Date().toISOString().split('T')[0];
-                const expiryStr = slot.expiry_date;
-                if (expiryStr < todayStr) {
-                    return 'bg-rose-50/60 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30 shadow-sm shadow-rose-500/5';
-                }
-                const diffDays = Math.round((new Date(expiryStr) - new Date(todayStr)) / 86400000);
-                if (diffDays <= 7) {
-                    return 'bg-amber-50/60 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 shadow-sm shadow-amber-500/5';
-                }
-                return 'bg-emerald-50/60 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 shadow-sm shadow-emerald-500/5';
-            },
-
         };
     };
 </script>
 
 <div class="space-y-4 pb-20" x-data="machineApp()"
-    @keydown.escape.window="showLogPanel = false; showInventoryPanel = false"
+    @keydown.escape.window="showLogPanel = false"
     @ajax:navigate.window.prevent="fetchPage($event.detail.url)" @submit="if($event.target.method.toLowerCase() === 'get') {
         $event.preventDefault();
         const url = new URL($event.target.action, window.location.origin);
@@ -722,15 +670,6 @@
                                                 d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
                                         </svg>
                                     </button>
-                                    <a href="{{ route('admin.machines.pricing', $machine) }}"
-                                        class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-amber-500 hover:bg-amber-500/5 dark:hover:bg-amber-500/10 border border-transparent hover:border-amber-500/20 transition-all duration-200"
-                                        title="{{ __('Machine Pricing') }}">
-                                        <svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </a>
                                 </div>
                             </td>
                         </tr>
@@ -898,14 +837,6 @@
                             </svg>
                             {{ __('Logs') }}
                         </button>
-                        <a href="{{ route('admin.machines.pricing', $machine) }}"
-                            class="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs hover:bg-amber-500 hover:text-white transition-all duration-300 border border-slate-200/50 dark:border-slate-700/50">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {{ __('Pricing') }}
-                        </a>
                     </div>
                 </div>
                 @empty
@@ -1454,248 +1385,6 @@
         </div>
     </div><!-- /Edit Modal -->
 
-    <!-- Inventory Offcanvas Panel (唯讀庫存一覽) -->
-    <div x-show="showInventoryPanel" class="fixed inset-0 z-[100] overflow-hidden" style="display: none;"
-        aria-labelledby="inventory-panel-title" role="dialog" aria-modal="true">
-
-        <!-- Background backdrop -->
-        <div x-show="showInventoryPanel" x-transition:enter="ease-in-out duration-300"
-            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-            x-transition:leave="ease-in-out duration-300" x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-            @click="showInventoryPanel = false">
-        </div>
-
-        <div class="fixed inset-y-0 right-0 max-w-full flex">
-            <!-- Sliding panel -->
-            <div x-show="showInventoryPanel"
-                x-transition:enter="transform transition ease-in-out duration-500 sm:duration-700"
-                x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
-                x-transition:leave="transform transition ease-in-out duration-500 sm:duration-700"
-                x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-                class="w-screen max-w-4xl">
-
-                <div
-                    class="h-full flex flex-col bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 rounded-l-[32px] overflow-hidden">
-                    <!-- Header -->
-                    <div
-                        class="px-5 py-6 sm:px-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="min-w-0 flex-1">
-                                <h2 id="inventory-panel-title"
-                                    class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white font-display flex items-center gap-2 sm:gap-3">
-                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-cyan-500 flex-shrink-0"
-                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                    </svg>
-                                    <span class="truncate">{{ __('Stock & Expiry Overview') }}</span>
-                                </h2>
-                                <div
-                                    class="mt-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-[12px] sm:text-sm text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest overflow-hidden">
-                                    <span x-text="currentMachineSn"
-                                        class="font-mono text-cyan-600 dark:text-cyan-400 truncate"></span>
-                                    <span class="hidden sm:inline opacity-50">—</span>
-                                    <span x-text="currentMachineName" class="truncate"></span>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 h-7 flex items-center">
-                                <button type="button" @click="showInventoryPanel = false"
-                                    class="bg-white dark:bg-slate-800 rounded-full p-2 text-slate-400 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition duration-300 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <span class="sr-only">{{ __('Close Panel') }}</span>
-                                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 統計摘要 -->
-                        <div class="mt-6 flex items-center gap-4">
-                            <div
-                                class="px-5 py-3 rounded-2xl bg-white dark:bg-slate-800/50 flex flex-col items-center min-w-[100px] border border-slate-100 dark:border-slate-800/50">
-                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{{
-                                    __('Total Slots') }}</span>
-                                <span class="text-2xl font-black text-slate-700 dark:text-slate-200"
-                                    x-text="inventorySlots.length"></span>
-                            </div>
-                            <div
-                                class="px-5 py-3 rounded-2xl bg-rose-500/5 border border-rose-500/10 flex flex-col items-center min-w-[100px]">
-                                <span class="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-0.5">{{
-                                    __('Low Stock') }}</span>
-                                <span class="text-2xl font-black text-rose-600"
-                                    x-text="inventorySlots.filter(s => s != null && s.max_stock > 0 && s.stock <= (s.max_stock * 0.2)).length"></span>
-                            </div>
-                            <div
-                                class="px-5 py-3 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex flex-col items-center min-w-[100px]">
-                                <span class="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-0.5">{{
-                                    __('Expiring') }}</span>
-                                <span class="text-2xl font-black text-amber-600"
-                                    x-text="inventorySlots.filter(s => { if (!s || !s.expiry_date) return false; const diff = Math.round((new Date(s.expiry_date) - new Date()) / 86400000); return diff >= 0 && diff <= 7; }).length"></span>
-                            </div>
-                        </div>
-                    </div><!-- /Header -->
-
-                    <!-- Body / Cabinet Grid -->
-                    <div class="flex-1 overflow-y-auto p-6 sm:p-8">
-                        <div class="relative min-h-[400px]">
-                            <!-- Loading State -->
-                            <div x-show="inventoryLoading" x-transition:enter="transition ease-out duration-300"
-                                x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-                                x-transition:leave="transition ease-in duration-300"
-                                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                                class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/40 dark:bg-slate-900/40 backdrop-blur-[1px] rounded-2xl"
-                                x-cloak>
-
-                                <div class="relative w-16 h-16 mb-4 flex items-center justify-center">
-                                    <!-- 外圈：快速旋轉 -->
-                                    <div
-                                        class="absolute inset-0 rounded-full border-2 border-transparent border-t-cyan-500 border-r-cyan-500/30 animate-spin">
-                                    </div>
-                                    <!-- 內圈：反向慢速旋轉 -->
-                                    <div class="absolute inset-2 rounded-full border border-cyan-500/10 animate-spin"
-                                        style="animation-duration: 3s; direction: reverse;"></div>
-                                    <!-- 核心：脈衝圖示 -->
-                                    <div class="relative w-8 h-8 flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-cyan-500 animate-pulse" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
-                                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <p
-                                    class="text-[12px] font-black text-cyan-600 dark:text-cyan-400 uppercase tracking-[0.4em] animate-pulse">
-                                    {{ __('Loading Data') }}...</p>
-                            </div>
-
-                            <!-- Status Legend -->
-                            <div class="flex items-center gap-6 mb-6" x-show="!inventoryLoading">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-3 h-3 rounded-full bg-rose-500 shadow-lg shadow-rose-500/30"></span>
-                                    <span class="text-[12px] font-black text-slate-500 uppercase tracking-[0.15em]">{{
-                                        __('Expired') }}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        class="w-3 h-3 rounded-full bg-amber-500 shadow-lg shadow-amber-500/30"></span>
-                                    <span class="text-[12px] font-black text-slate-500 uppercase tracking-[0.15em]">{{
-                                        __('Warning') }}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span
-                                        class="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30"></span>
-                                    <span class="text-[12px] font-black text-slate-500 uppercase tracking-[0.15em]">{{
-                                        __('Normal') }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Slots Grid (唯讀) -->
-                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
-                                x-show="!inventoryLoading">
-                                <template x-for="slot in inventorySlots" :key="slot.id">
-                                    <div :class="getSlotColorClass(slot)"
-                                        class="min-h-[260px] rounded-[2rem] p-5 flex flex-col items-center justify-center border-2 transition-all duration-300 relative">
-
-                                        <!-- Slot Header -->
-                                        <div
-                                            class="absolute top-3.5 left-4 right-4 flex justify-between items-center z-10">
-                                            <div
-                                                class="px-2.5 py-1 rounded-xl bg-slate-900/10 dark:bg-white/10 backdrop-blur-md border border-slate-900/5 dark:border-white/10 flex-shrink-0">
-                                                <span
-                                                    class="text-xs font-black uppercase tracking-tighter text-slate-800 dark:text-white"
-                                                    x-text="slot.slot_no"></span>
-                                            </div>
-                                            <template x-if="slot.max_stock > 0 && slot.stock <= (slot.max_stock * 0.2)">
-                                                <div
-                                                    class="px-2 py-1 rounded-xl bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest shadow-lg shadow-rose-500/30 animate-pulse whitespace-nowrap select-none">
-                                                    {{ __('Low') }}
-                                                </div>
-                                            </template>
-                                        </div>
-
-                                        <!-- Product Image -->
-                                        <div class="relative w-16 h-16 mb-3 mt-2">
-                                            <div
-                                                class="absolute inset-0 rounded-2xl bg-white/20 dark:bg-slate-900/40 backdrop-blur-xl border border-white/30 dark:border-white/5 shadow-inner overflow-hidden">
-                                                <template x-if="slot.product && slot.product.image_url">
-                                                    <img :src="slot.product.image_url"
-                                                        class="w-full h-full object-cover">
-                                                </template>
-                                                <template x-if="!slot.product || !slot.product.image_url">
-                                                    <div class="w-full h-full flex items-center justify-center">
-                                                        <svg class="w-7 h-7 opacity-20" fill="none"
-                                                            stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2.5"
-                                                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                                        </svg>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-
-                                        <!-- Slot Info -->
-                                        <div class="text-center w-full space-y-2">
-                                            <template x-if="slot.product">
-                                                <div class="text-sm font-black truncate w-full opacity-90 tracking-tight"
-                                                    x-text="slot.product.name"></div>
-                                            </template>
-                                            <template x-if="!slot.product">
-                                                <div
-                                                    class="text-sm font-bold text-slate-300 dark:text-slate-600 tracking-tight">
-                                                    {{ __('Empty') }}</div>
-                                            </template>
-
-                                            <div class="space-y-2">
-                                                <!-- Stock Level -->
-                                                <div class="flex items-baseline justify-center gap-1">
-                                                    <span class="text-xl font-black tracking-tighter leading-none"
-                                                        x-text="slot.stock"></span>
-                                                    <span class="text-xs font-black opacity-30">/</span>
-                                                    <span class="text-sm font-bold opacity-50"
-                                                        x-text="slot.max_stock || 10"></span>
-                                                </div>
-
-                                                <!-- Expiry Date -->
-                                                <div class="text-sm font-black tracking-tight leading-none opacity-80"
-                                                    x-text="slot.expiry_date ? slot.expiry_date.replace(/-/g, '/') : '----/--/--'">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-
-                            <!-- Empty state -->
-                            <template x-if="inventorySlots.length === 0 && !inventoryLoading">
-                                <div class="px-6 py-20 text-center">
-                                    <div class="flex flex-col items-center">
-                                        <div
-                                            class="p-4 rounded-full bg-slate-50 dark:bg-slate-800/50 mb-4 border border-slate-100 dark:border-slate-800/50">
-                                            <svg class="w-8 h-8 text-slate-300 dark:text-slate-600" viewBox="0 0 24 24"
-                                                fill="none" stroke="currentColor" stroke-width="1.5">
-                                                <path
-                                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                                            </svg>
-                                        </div>
-                                        <span
-                                            class="text-[12px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{{
-                                            __('No slot data available') }}</span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div><!-- /Body -->
-
-                </div>
-            </div><!-- /Sliding panel -->
-        </div>
-    </div><!-- /Inventory Offcanvas -->
 
     <x-confirm-modal alpineVar="showResolveConfirm" confirmAction="executeResolve()" iconType="warning"
         title="{{ __('Clear Abnormal Status') }}"

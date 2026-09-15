@@ -29,8 +29,7 @@ return new class extends Migration
             $table->boolean('is_spring_slot_41_50')->default(0)->comment('貨道類型(41~50): 0=履帶, 1=彈簧');
             $table->boolean('is_spring_slot_51_60')->default(0)->comment('貨道類型(51~60): 0=履帶, 1=彈簧');
             $table->boolean('member_system_enabled')->default(0)->comment('會員系統開關');
-            
-            $table->foreignId('payment_config_id')->nullable()->constrained('payment_configs')->nullOnDelete()->comment('關聯金流參數組合');
+
             $table->foreignId('machine_model_id')->nullable()->constrained('machine_models')->nullOnDelete()->comment('關類型號組合');
             $table->foreignId('creator_id')->nullable()->constrained('users')->nullOnDelete()->comment('建立者');
             $table->foreignId('updater_id')->nullable()->constrained('users')->nullOnDelete()->comment('修改者');
@@ -43,7 +42,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('machines', function (Blueprint $table) {
-            $table->dropForeign(['payment_config_id']);
             $table->dropForeign(['machine_model_id']);
             $table->dropForeign(['creator_id']);
             $table->dropForeign(['updater_id']);
@@ -66,7 +64,6 @@ return new class extends Migration
                 'is_spring_slot_41_50',
                 'is_spring_slot_51_60',
                 'member_system_enabled',
-                'payment_config_id',
                 'machine_model_id',
                 'creator_id',
                 'updater_id',

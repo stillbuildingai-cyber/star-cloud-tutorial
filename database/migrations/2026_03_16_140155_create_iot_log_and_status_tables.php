@@ -24,31 +24,9 @@ return new class extends Migration
             $table->index(['machine_id', 'status']);
         });
 
-        Schema::create('coin_inventories', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('machine_id')->constrained('machines')->onDelete('cascade');
-            $table->integer('value_1')->default(0);
-            $table->integer('value_5')->default(0);
-            $table->integer('value_10')->default(0);
-            $table->integer('value_50')->default(0);
-            $table->integer('value_100')->default(0);
-            $table->integer('value_500')->default(0);
-            $table->integer('value_1000')->default(0);
-            $table->string('operator')->nullable()->comment('操作人 (0=消費者)');
-            $table->timestamps();
-        });
-
-        Schema::create('timer_statuses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('machine_id')->constrained('machines')->onDelete('cascade');
-            $table->string('slot_no')->comment('貨道 ID (B710 cid)');
-            $table->foreignId('product_id')->nullable()->constrained('products')->onDelete('set null');
-            $table->tinyInteger('status')->default(0)->comment('0:未啟用/1:使用中/2:異常');
-            $table->integer('remaining_seconds')->default(0);
-            $table->timestamps();
-
-            $table->unique(['machine_id', 'slot_no']);
-        });
+        // 註：原本這裡還會建立 coin_inventories (投幣機零錢統計) 與 timer_statuses
+        // (計時器/貨道商品狀態，且外鍵指向已移除的 products 表) 兩張表，兩者皆屬於
+        // 已整支移除的販賣機投幣/商品模組，教學版智慧插座不需要，予以移除。
     }
 
     /**
@@ -56,8 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('timer_statuses');
-        Schema::dropIfExists('coin_inventories');
         Schema::dropIfExists('remote_commands');
     }
 };

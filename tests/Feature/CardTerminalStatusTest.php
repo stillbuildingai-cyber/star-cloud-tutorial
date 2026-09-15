@@ -2,132 +2,79 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Transaction\ProcessTransactionFinalized;
 use App\Models\Machine\Machine;
 use App\Models\Machine\MachineLog;
-use App\Services\Machine\MqttService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * 刷卡機 (Nexsys 終端機) 交易訊號 → 後台機台日誌/燈號 (Plan A) 測試。
- * 涵蓋 payment_type {1 信用卡, 2 電子票證, 10 手機支付} 共用同一台實體刷卡機。
+ * 刷卡機 (Nexsys 終端機) 燈號/日誌 (card_terminal_status) — Machine 硬體屬性測試。
+ * 涵蓋 payment_type {1 信用卡, 2 電子票證, 10 手機支付} 共用同一台實體刷卡機的概念仍保留於
+ * card_terminal_enabled 硬體開關上，但「哪些交易失敗會寫入 card_terminal 日誌」的分類邏輯
+ * 原本位於已整支移除的 TransactionService (販賣機交易流程)，教學版不再需要，故本檔案
+ * 改為直接建立 MachineLog 紀錄來驗證 Machine/MachineLog 本身的燈號計算與翻譯邏輯，
+ * 不再透過 Order/Transaction 觸發。
+ *
+ * 原本測試「哪些付款失敗會寫入 card_terminal 日誌」(test_scan_payment_failure_is_excluded /
+ * test_failure_without_response_code_does_not_log) 的商業分類規則已隨 TransactionService
+ * 一併移除，教學版程式碼中已無任何地方會建立 card_terminal 日誌，故不再適用，予以移除。
  */
 class CardTerminalStatusTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    private function createCardTerminalLog(Machine $machine, string $level, string $cardCode, bool $isResolved = false): MachineLog
     {
-        parent::setUp();
-        // Job handle 內注入 MqttService 發 ack，測試環境以 mock 取代避免真的連 MQTT
-        $this->mock(MqttService::class, function ($m) {
-            $m->shouldReceive('pushCommand')->andReturnTrue();
-        });
+        return MachineLog::create([
+            'machine_id' => $machine->id,
+            'company_id' => $machine->company_id,
+            'type' => 'card_terminal',
+            'level' => $level,
+            'message' => 'Card payment failed',
+            'context' => ['card_code' => $cardCode],
+            'is_resolved' => $isResolved,
+        ]);
     }
 
-    /** 組裝一筆 finalize payload */
-    private function finalizePayload(string $serialNo, string $flowId, int $paymentType, int $paymentStatus, ?string $paymentResponse, string $status): array
-    {
-        return [
-            'action' => 'finalize',
-            'flow_id' => $flowId,
-            'payment_type' => $paymentType,
-            'serial_no' => $serialNo,
-            'order' => [
-                'flow_id' => $flowId,
-                'order_no' => $flowId,
-                'total_amount' => 59,
-                'pay_amount' => 59,
-                'payment_type' => $paymentType,
-                'payment_status' => $paymentStatus,
-                'payment_response' => $paymentResponse,
-                'status' => $status,
-                'items' => [],
-            ],
-        ];
-    }
-
-    public function test_failed_credit_card_writes_card_terminal_warning_log(): void
+    public function test_unresolved_warning_log_sets_card_terminal_status_warning(): void
     {
         $machine = Machine::factory()->create(['last_heartbeat_at' => now()]);
 
-        ProcessTransactionFinalized::dispatchSync(
-            $machine->serial_no,
-            $this->finalizePayload($machine->serial_no, 'FLOW-CC-FAIL', 1, 0, 'RAWMSG... | code=0003', 'failed')
-        );
+        $this->createCardTerminalLog($machine, 'warning', '0003');
 
-        $log = MachineLog::where('machine_id', $machine->id)->where('type', 'card_terminal')->first();
-        $this->assertNotNull($log, '應寫入一筆 card_terminal 日誌');
-        $this->assertEquals('warning', $log->level, 'card_terminal 應為 warning 級 (不觸發 Discord)');
-        $this->assertEquals('0003', $log->context['card_code']);
-
-        // 燈號 (fallback 即時查詢路徑)
         $this->assertEquals('warning', $machine->fresh()->card_terminal_status);
     }
 
-    public function test_failed_eticket_and_mobile_pay_also_write_log(): void
-    {
-        foreach ([2 => 'FLOW-ET', 10 => 'FLOW-MO'] as $type => $flow) {
-            $machine = Machine::factory()->create(['last_heartbeat_at' => now()]);
-
-            ProcessTransactionFinalized::dispatchSync(
-                $machine->serial_no,
-                $this->finalizePayload($machine->serial_no, $flow, $type, 0, ' | code=0005', 'failed')
-            );
-
-            $this->assertEquals('warning', $machine->fresh()->card_terminal_status, "payment_type={$type} 應納入刷卡機燈號");
-        }
-    }
-
-    public function test_scan_payment_failure_is_excluded(): void
+    public function test_unresolved_error_log_sets_card_terminal_status_error(): void
     {
         $machine = Machine::factory()->create(['last_heartbeat_at' => now()]);
 
-        // payment_type=3 掃碼支付 (走網路，非實體刷卡機) → 不應寫 card_terminal 日誌
-        ProcessTransactionFinalized::dispatchSync(
-            $machine->serial_no,
-            $this->finalizePayload($machine->serial_no, 'FLOW-SCAN', 3, 0, ' | code=scan_failed', 'failed')
-        );
+        $this->createCardTerminalLog($machine, 'error', '0004');
 
-        $this->assertEquals(0, MachineLog::where('machine_id', $machine->id)->where('type', 'card_terminal')->count());
+        $this->assertEquals('error', $machine->fresh()->card_terminal_status);
+    }
+
+    public function test_no_unresolved_log_means_normal_status(): void
+    {
+        $machine = Machine::factory()->create(['last_heartbeat_at' => now()]);
+
         $this->assertEquals('normal', $machine->fresh()->card_terminal_status);
     }
 
-    public function test_successful_transaction_auto_resolves_prior_warnings(): void
+    public function test_resolving_prior_warning_restores_normal_status(): void
     {
         $machine = Machine::factory()->create(['last_heartbeat_at' => now()]);
 
-        // 先製造一筆未解決的刷卡機警告
-        ProcessTransactionFinalized::dispatchSync(
-            $machine->serial_no,
-            $this->finalizePayload($machine->serial_no, 'FLOW-FAIL', 1, 0, ' | code=0003', 'failed')
-        );
+        $log = $this->createCardTerminalLog($machine, 'warning', '0003');
         $this->assertEquals('warning', $machine->fresh()->card_terminal_status);
 
-        // 下一筆刷卡成功 → 應自動消警，燈號恢復 normal
-        ProcessTransactionFinalized::dispatchSync(
-            $machine->serial_no,
-            $this->finalizePayload($machine->serial_no, 'FLOW-OK', 1, 1, 'RAWMSG-SUCCESS', 'completed')
-        );
+        // 模擬下一次刷卡成功後，系統將先前的警告日誌標記為已解決 (自動消警)
+        $log->update(['is_resolved' => true]);
 
-        $this->assertEquals('normal', $machine->fresh()->card_terminal_status, '刷卡成功後應自動消警');
+        $this->assertEquals('normal', $machine->fresh()->card_terminal_status, '消警後應恢復 normal');
         $unresolved = MachineLog::where('machine_id', $machine->id)
             ->where('type', 'card_terminal')->where('is_resolved', false)->count();
         $this->assertEquals(0, $unresolved);
-    }
-
-    public function test_failure_without_response_code_does_not_log(): void
-    {
-        $machine = Machine::factory()->create(['last_heartbeat_at' => now()]);
-
-        // 失敗但沒有刷卡機回應碼 (例如顧客未感應就放棄) → 不視為硬體訊號問題
-        ProcessTransactionFinalized::dispatchSync(
-            $machine->serial_no,
-            $this->finalizePayload($machine->serial_no, 'FLOW-NOCODE', 1, 0, 'JUSTRAWNOCODE', 'abandoned')
-        );
-
-        $this->assertEquals(0, MachineLog::where('machine_id', $machine->id)->where('type', 'card_terminal')->count());
     }
 
     public function test_translated_message_renders_official_chinese(): void

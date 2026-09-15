@@ -44,15 +44,6 @@ class DataConfigController extends Controller
         ]);
     }
 
-    // 點數設定
-    public function points()
-    {
-        return view('admin.placeholder', [
-            'title' => '點數設定',
-            'description' => '客戶點數系統設定',
-        ]);
-    }
-
     // 識別證管理
     public function badges()
     {

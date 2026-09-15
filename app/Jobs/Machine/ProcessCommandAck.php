@@ -3,7 +3,6 @@
 namespace App\Jobs\Machine;
 
 use App\Models\Machine\Machine;
-use App\Models\Machine\MachineStockMovement;
 use App\Models\Machine\RemoteCommand;
 use App\Services\Machine\MachineService;
 use Illuminate\Bus\Queueable;
@@ -102,43 +101,10 @@ class ProcessCommandAck implements ShouldQueue
 
         $machine = $command->machine;
 
-        if ($command->command_type === 'dispense') {
-            // 遠端出貨指令僅紀錄狀態，不再執行庫存預扣或回滾。
-            // 真正的庫存異動將由機台發送的 Transaction Finalize (結案) 流程處理。
-            $msgKey = ($status === 'success') ? "Remote dispense successful for slot :slot" : "Remote dispense failed for slot :slot";
-            $level = ($status === 'success') ? 'info' : 'error';
-
-            ProcessStateLog::dispatch(
-                $machine->id,
-                $machine->company_id,
-                $msgKey,
-                $level,
-                ['slot' => $command->payload['slot_no'] ?? 'N/A']
-            );
-        }
-
- elseif ($command->command_type === 'reload_stock') {
-            // 若同步失敗，自動 Rollback 回滾庫存
-            if ($status === 'failed' && isset($command->payload['slot_no'], $command->payload['old'])) {
-                $slotNo = $command->payload['slot_no'];
-                $slot = $machine->slots()->where('slot_no', $slotNo)->first();
-
-                if ($slot) {
-                    $oldData = $command->payload['old'];
-                    $slot->update([
-                        'stock' => $oldData['stock'],
-                        'expiry_date' => $oldData['expiry_date'] ?? null,
-                        'batch_no' => $oldData['batch_no'] ?? null,
-                    ]);
-
-                    Log::warning('MQTT CommandAck failed, rolled back inventory', [
-                        'serial_no' => $this->serialNo,
-                        'slot_no' => $slotNo,
-                        'rolled_back_to' => $oldData
-                    ]);
-                }
-            }
-        }
+        // 註：原本這裡還會處理 'dispense' (遠端出貨指令狀態紀錄) 與 'reload_stock'
+        // (貨道庫存同步失敗回滾) 兩種指令類型，兩者皆屬於已整支移除的販賣機貨道/庫存
+        // 模組，教學版智慧插座不需要，予以移除。reboot/lock/unlock/fan/power 等
+        // 智慧插座指令的 ACK 處理維持不變 (見下方通用狀態更新與機台日誌紀錄)。
 
         $command->update([
             'status' => $status,

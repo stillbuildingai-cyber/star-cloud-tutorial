@@ -75,11 +75,6 @@
                 }));
                 return;
             }
-            if (!this.$el.payment_config_id.value.trim()) {
-                if (!confirm('{{ __("No payment config is selected (Not Used). Save this machine without any payment config?") }}')) {
-                    return;
-                }
-            }
             this.$el.submit();
         }
     }" @submit.prevent="submitForm" action="{{ route('admin.basic-settings.machines.update', $machine) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
@@ -344,36 +339,84 @@
                         </div>
                     </div>
                 </div>
-                 <div class="luxury-card rounded-3xl p-8 animate-luxury-in relative z-20" style="animation-delay: 200ms">
-                     <div class="flex items-center gap-3 mb-8">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                            <svg class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75m0-1.5a.75.75 0 0 1 .75.75v.75m-.75 0H3m.75 0h.75m-1.5 0a.75.75 0 0 1-.75-.75V3M3 10.5v1.5m10.5-3v-4.5m0 4.5h5.25m-5.25 0V10.5m0-1.5a.75.75 0 0 1 .75-.75h.75m-1.5 0H12m.75 0h.75m-1.5 0a.75.75 0 0 1-.75-.75V3.75M12 4.5H3.75a2.25 2.25 0 0 0-2.25 2.25v10.5a2.25 2.25 0 0 0 2.25 2.25h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 18.75 4.5Z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-black text-slate-800 dark:text-white tracking-tight">{{ __('Payment & Invoice') }}</h3>
-                    </div>
-
-                    <div class="space-y-6">
-                        <div>
-                             <label class="block text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-2">{{ __('Payment Config') }}</label>
-                             <x-searchable-select 
-                                 name="payment_config_id" 
-                                 :selected="old('payment_config_id', $machine->payment_config_id)"
-                                 :placeholder="__('Not Used')"
-                                 :hasSearch="false"
-                             >
-                                @foreach($paymentConfigs as $config)
-                                    <option value="{{ $config->id }}" {{ $machine->payment_config_id == $config->id ? 'selected' : '' }}>{{ $config->name }}</option>
-                                @endforeach
-                            </x-searchable-select>
-                        </div>
-                    </div>
-                 </div>
 
             </div>
         </div>
     </form>
+
+    <!-- Schedules Section -->
+    <div class="luxury-card rounded-[2.5rem] p-8 animate-luxury-in mt-8"
+         x-data="machineSchedules(@js($machine->id))" x-init="load()">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                <svg class="w-5 h-5 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-black text-slate-800 dark:text-white tracking-tight">{{ __('Power Schedules') }}</h3>
+        </div>
+
+        <!-- Existing schedules list -->
+        <div class="space-y-3 mb-8">
+            <template x-if="schedules.length === 0">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ __('No schedules yet') }}</p>
+            </template>
+            <template x-for="schedule in schedules" :key="schedule.id">
+                <div class="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-white/5">
+                    <div class="flex items-center gap-4">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest"
+                              :class="schedule.action === 'power_on' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-slate-500/10 text-slate-500'"
+                              x-text="schedule.action === 'power_on' ? '{{ __('Power On') }}' : '{{ __('Power Off') }}'"></span>
+                        <span class="font-mono font-bold text-slate-700 dark:text-slate-200" x-text="schedule.time"></span>
+                        <span class="text-xs font-bold text-slate-400" x-text="formatDays(schedule.days_of_week)"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="toggle(schedule)"
+                                class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all"
+                                :class="schedule.is_active ? 'bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'"
+                                x-text="schedule.is_active ? '{{ __('Active') }}' : '{{ __('Paused') }}'"></button>
+                        <button type="button" @click="remove(schedule)"
+                                class="p-2 rounded-lg text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-all">
+                            <svg class="w-4 h-4 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9l-.346 9m-4.788 0L9.26 9M4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Add new schedule -->
+        <div class="p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{{ __('Action') }}</label>
+                    <select x-model="form.action" class="luxury-input w-full">
+                        <option value="power_on">{{ __('Power On') }}</option>
+                        <option value="power_off">{{ __('Power Off') }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{{ __('Time') }}</label>
+                    <input type="time" x-model="form.time" class="luxury-input w-full">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{{ __('Days') }}</label>
+                    <div class="flex gap-1.5 flex-wrap">
+                        <template x-for="day in [1,2,3,4,5,6,7]" :key="day">
+                            <button type="button" @click="toggleDay(day)"
+                                    class="w-8 h-8 rounded-lg text-[10px] font-black transition-all"
+                                    :class="form.days_of_week.includes(day) ? 'bg-cyan-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'"
+                                    x-text="dayLabel(day)"></button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <button type="button" @click="add()" class="btn-luxury-primary text-xs">
+                {{ __('Add Schedule') }}
+            </button>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -414,6 +457,88 @@ function machineGeocoding() {
                 this.loading = false;
             }
         }
+    }
+}
+
+function machineSchedules(machineId) {
+    return {
+        machineId,
+        schedules: [],
+        form: { action: 'power_on', time: '08:00', days_of_week: [1,2,3,4,5] },
+        dayNames: ['', @js(__('Mon')), @js(__('Tue')), @js(__('Wed')), @js(__('Thu')), @js(__('Fri')), @js(__('Sat')), @js(__('Sun'))],
+        dayLabel(day) {
+            return this.dayNames[day];
+        },
+        formatDays(daysString) {
+            return daysString.split(',').map(d => this.dayNames[parseInt(d)]).join(' ');
+        },
+        toggleDay(day) {
+            const idx = this.form.days_of_week.indexOf(day);
+            if (idx === -1) {
+                this.form.days_of_week.push(day);
+            } else {
+                this.form.days_of_week.splice(idx, 1);
+            }
+        },
+        headers() {
+            return {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            };
+        },
+        baseUrl() {
+            return `/admin/basic-settings/machines/${this.machineId}/schedules`;
+        },
+        toast(message, type) {
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message, type } }));
+        },
+        async load() {
+            const res = await fetch(this.baseUrl(), { headers: this.headers() });
+            const data = await res.json();
+            if (data.success) {
+                this.schedules = data.schedules;
+            }
+        },
+        async add() {
+            if (this.form.days_of_week.length === 0) {
+                this.toast(@js(__('Please select at least one day')), 'error');
+                return;
+            }
+            const res = await fetch(this.baseUrl(), {
+                method: 'POST',
+                headers: this.headers(),
+                body: JSON.stringify(this.form),
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.schedules.push(data.schedule);
+                this.toast(@js(__('Schedule added')), 'success');
+            } else {
+                this.toast(@js(__('Failed to add schedule')), 'error');
+            }
+        },
+        async toggle(schedule) {
+            const res = await fetch(`${this.baseUrl()}/${schedule.id}/toggle`, {
+                method: 'PATCH',
+                headers: this.headers(),
+            });
+            const data = await res.json();
+            if (data.success) {
+                schedule.is_active = data.schedule.is_active;
+            }
+        },
+        async remove(schedule) {
+            const res = await fetch(`${this.baseUrl()}/${schedule.id}`, {
+                method: 'DELETE',
+                headers: this.headers(),
+            });
+            const data = await res.json();
+            if (data.success) {
+                this.schedules = this.schedules.filter(s => s.id !== schedule.id);
+                this.toast(@js(__('Schedule removed')), 'success');
+            }
+        },
     }
 }
 </script>

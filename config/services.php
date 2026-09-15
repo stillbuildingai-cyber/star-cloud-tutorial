@@ -31,11 +31,4 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    // 綠界電子發票 B2C API（後台對帳/補開/作廢）。金鑰仍取自各機台 payment_configs.ecpay_invoice；
-    // 此處僅控制 API 網域。留空（未設 env）時由 EcpayInvoiceService 依環境 fail-safe：
-    // 正式環境才用 https://einvoice.ecpay.com.tw，其餘走 https://einvoice-stage.ecpay.com.tw。
-    'ecpay_invoice' => [
-        'base_url' => env('ECPAY_INVOICE_BASE_URL'),
-    ],
-
 ];

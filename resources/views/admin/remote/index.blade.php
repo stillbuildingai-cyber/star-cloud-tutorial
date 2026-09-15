@@ -27,11 +27,6 @@
 
             // Localized Strings
             translations: @js([
-                'Please select a slot' => __('Please select a slot'),
-                'Search cargo lane' => __('Search cargo lane'),
-                'Stock:' => __('Stock:'),
-                'Loading...' => __('Loading...'),
-                'No active cargo lanes found' => __('No active cargo lanes found'),
                 'Empty' => __('Empty'),
                 'Machine Reboot' => __('Machine Reboot'),
                 'Machine Force Reboot' => __('Machine Force Reboot'),
@@ -77,17 +72,9 @@
             // Form States
             lockStatus: false,
             changeAmount: 100,
-            selectedSlot: '',
             note: '',
 
             async init() {
-                // Watch for machine data changes to rebuild slot select
-                this.$watch('selectedMachine', (val) => {
-                    if (val && val.slots) {
-                        this.$nextTick(() => this.updateSlotSelect());
-                    }
-                });
-
                 // 首次載入時綁定分頁連結
                 this.$nextTick(() => {
                     this.bindPaginationLinks(this.$refs.historyContent, 'history');
@@ -234,84 +221,6 @@
                 }
             },
 
-            updateSlotSelect() {
-                const wrapper = document.getElementById('slot-select-wrapper');
-                if (!wrapper) return;
-
-                // Clear previous and reset
-                const oldSelect = wrapper.querySelector('select');
-                if (oldSelect) {
-                    try {
-                        const instance = window.HSSelect.getInstance(oldSelect);
-                        if (instance) instance.destroy();
-                    } catch (e) { }
-                }
-                wrapper.innerHTML = '';
-
-                // If loading, show a skeleton or simple text
-                if (this.loading) {
-                    wrapper.innerHTML = `<div class="py-5 px-6 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-slate-100 dark:border-slate-800 text-slate-400 text-sm font-bold animate-pulse">${this.translations['Loading...']}</div>`;
-                    return;
-                }
-
-                if (!this.selectedMachine || !this.selectedMachine.slots || this.selectedMachine.slots.length === 0) {
-                    wrapper.innerHTML = `
-                    <div class="p-6 rounded-[1.5rem] bg-rose-500/5 text-rose-500 text-xs font-black uppercase tracking-[0.1em] text-center border border-rose-500/10">
-                        ${this.translations['No active cargo lanes found']}
-                    </div>
-                `;
-                    return;
-                }
-
-                const selectEl = document.createElement('select');
-                selectEl.className = 'hidden';
-                selectEl.id = 'dynamic-slot-select-' + Date.now();
-
-                const config = {
-                    "placeholder": this.translations['Please select a slot'] + "...",
-                    "hasSearch": true,
-                    "searchPlaceholder": this.translations['Search cargo lane'] + "...",
-                    "isHidePlaceholder": false,
-                    "searchClasses": "block w-[calc(100%-16px)] mx-2 py-2 px-3 text-sm border-slate-200 dark:border-white/10 rounded-lg focus:border-cyan-500 focus:ring-cyan-500 bg-slate-50 dark:bg-slate-900/50 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500",
-                    "searchWrapperClasses": "sticky top-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-2 z-10",
-                    "toggleClasses": "hs-select-toggle luxury-select-toggle",
-                    "dropdownClasses": "hs-select-menu w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] mt-2 z-[100] animate-luxury-in",
-                    "optionClasses": "hs-select-option py-2.5 px-3 mb-0.5 text-sm text-slate-800 dark:text-slate-300 cursor-pointer hover:bg-slate-100 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-400 rounded-lg flex items-center justify-between transition-all duration-300",
-                    "optionTemplate": '<div class="flex items-center justify-between w-full"><span data-title></span><span class="hs-select-active-indicator hidden text-cyan-500"><svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span></div>'
-                };
-                selectEl.setAttribute('data-hs-select', JSON.stringify(config));
-
-                const placeholderOpt = document.createElement('option');
-                placeholderOpt.value = '';
-                placeholderOpt.textContent = this.translations['Please select a slot'] + "...";
-                placeholderOpt.dataset.title = this.translations['Please select a slot'] + "...";
-                selectEl.appendChild(placeholderOpt);
-
-                const sortedSlots = [...this.selectedMachine.slots].sort((a, b) => {
-                    const aNo = parseInt(a.slot_no);
-                    const bNo = parseInt(b.slot_no);
-                    return isNaN(aNo) || isNaN(bNo) ? a.slot_no.localeCompare(b.slot_no) : aNo - bNo;
-                });
-
-                sortedSlots.forEach(slot => {
-                    const opt = document.createElement('option');
-                    opt.value = slot.slot_no;
-                    const productName = slot.product ? slot.product.name : this.translations['Empty'];
-                    const label = `[${slot.slot_no}] ${productName} (${this.translations['Stock:']} ${slot.stock})`;
-                    opt.textContent = label;
-                    opt.dataset.title = label;
-                    if (slot.slot_no === this.selectedSlot) opt.selected = true;
-                    selectEl.appendChild(opt);
-                });
-
-                wrapper.appendChild(selectEl);
-                selectEl.addEventListener('change', (e) => { this.selectedSlot = e.target.value; });
-
-                if (window.HSStaticMethods && window.HSStaticMethods.autoInit) {
-                    window.HSStaticMethods.autoInit(['select']);
-                }
-            },
-
             confirmModal: {
                 show: false,
                 type: '',
@@ -342,7 +251,6 @@
                     console.error('Fetch error:', e);
                 } finally {
                     this.loading = false;
-                    this.$nextTick(() => this.updateSlotSelect());
                 }
             },
 
@@ -949,53 +857,6 @@
                                 </div>
                             </div>
 
-                            <!-- Remote Dispense -->
-                            <div
-                                class="luxury-card rounded-[2.5rem] p-8 border border-slate-200/60 dark:border-slate-800/60">
-                                <div class="flex items-center justify-between mb-8">
-                                    <h3
-                                        class="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-3">
-                                        <span class="w-2 h-6 bg-violet-500 rounded-full"></span>
-                                        {{ __('Remote Dispense') }}
-                                    </h3>
-                                    <div
-                                        class="text-[40px] font-black text-slate-200 dark:text-slate-800 leading-none select-none tracking-tighter">
-                                        {{ __('ITEM') }}</div>
-                                </div>
-                                <div class="space-y-6">
-                                    <div class="space-y-2">
-                                        <label class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] ml-1">{{ __('Select Target Slot') }}</label>
-                                        <div id="slot-select-wrapper" class="relative min-h-[60px]">
-                                            <!-- Content Injected Dynamically by Alpine.js -->
-                                        </div>
-                                    </div>
-
-                                    <!-- Dispense Button (Card Style - Mirroring Row 2) -->
-                                    <button @click="sendCommand('dispense', { slot_no: selectedSlot })"
-                                        :disabled="submitting || !selectedSlot"
-                                        class="w-full p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 flex items-center justify-between hover:border-violet-500/50 dark:hover:border-violet-400/60 hover:bg-violet-500/5 dark:hover:bg-violet-400/5 group transition-all bg-white/50 dark:bg-slate-900/40 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <div class="flex items-center gap-5">
-                                            <div
-                                                class="w-12 h-12 rounded-2xl bg-violet-500/10 flex items-center justify-center text-violet-500 dark:text-violet-400 group-hover:scale-110 transition-transform duration-500 border border-violet-500/20 dark:border-violet-400/20 group-disabled:opacity-60">
-                                                <svg class="w-6 h-6" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                </svg>
-                                            </div>
-                                            <div class="text-left">
-                                                <div
-                                                    class="text-sm font-black text-slate-800 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors group-disabled:text-slate-500">
-                                                    {{ __('Remote Dispense') }}</div>
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="px-4 py-2 rounded-xl bg-violet-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-500/20 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0 font-sans group-disabled:hidden">
-                                            {{ __('Trigger') }}
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
                     </div>
 

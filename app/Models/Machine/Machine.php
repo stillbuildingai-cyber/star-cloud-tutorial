@@ -44,24 +44,6 @@ class Machine extends Model
                 }
             }
 
-            if ($machine->wasChanged([
-                'is_spring_slot_1_10',
-                'is_spring_slot_11_20',
-                'is_spring_slot_21_30',
-                'is_spring_slot_31_40',
-                'is_spring_slot_41_50',
-                'is_spring_slot_51_60',
-            ])) {
-                app(\App\Services\Machine\MachineService::class)->syncMachineSlotMaxStock($machine);
-            }
-
-            // 機台轉移公司：不同公司商品 ID 體系不同，舊的機台專屬定價必須清空，
-            // 避免跨租戶價格錯位與資料污染。批次刪除不觸發 model 事件，故補推一次
-            // B012 同步，讓機台重抓新公司目錄與（已清空的）定價。
-            if ($machine->wasChanged('company_id')) {
-                $machine->productPrices()->delete();
-                \App\Jobs\Product\SendProductSyncCommandJob::dispatch($machine->id, __('Machine company changed'));
-            }
         });
     }
 
@@ -101,7 +83,6 @@ class Machine extends Model
         'is_spring_slot_41_50',
         'is_spring_slot_51_60',
         'member_system_enabled',
-        'payment_config_id',
         'machine_model_id',
         'images',
         'creator_id',
@@ -404,29 +385,19 @@ class Machine extends Model
         return $this->hasMany(MachineLog::class);
     }
 
-    public function slots()
-    {
-        return $this->hasMany(MachineSlot::class);
-    }
-
-    public function productPrices()
-    {
-        return $this->hasMany(MachineProductPrice::class);
-    }
-
     public function commands()
     {
         return $this->hasMany(RemoteCommand::class);
     }
 
+    public function schedules()
+    {
+        return $this->hasMany(MachineSchedule::class);
+    }
+
     public function machineModel()
     {
         return $this->belongsTo(MachineModel::class);
-    }
-
-    public function paymentConfig()
-    {
-        return $this->belongsTo(\App\Models\System\PaymentConfig::class);
     }
 
     public function creator()
@@ -629,16 +600,6 @@ class Machine extends Model
     public function users()
     {
         return $this->belongsToMany(\App\Models\System\User::class);
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(\App\Models\Transaction\Order::class);
-    }
-
-    public function stockMovements()
-    {
-        return $this->hasMany(MachineStockMovement::class);
     }
 
     public function getDisplayTemperatureAttribute()

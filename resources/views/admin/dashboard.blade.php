@@ -67,87 +67,39 @@
             </div>
         </div>
 
-        <!-- Transaction Card -->
+        <!-- Fleet Overview & Recent Activity Card -->
         <div class="luxury-card rounded-2xl p-8 animate-luxury-in flex flex-col" style="animation-delay: 100ms">
             <div class="flex justify-between items-start mb-6">
                 <div>
                     <h3 class="text-xl font-black text-slate-800 dark:text-white font-display tracking-tight">{{
-                        __('Monthly Transactions') }}</h3>
-                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">{{ __('Monthly Cumulative Revenue') }}: <span class="text-cyan-500 font-black">${{ number_format($monthlyRevenue, 0) }}</span></p>
+                        __('Recent Machine Activity') }}</h3>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">{{ __('Total Machines') }}: <span class="text-cyan-500 font-black">{{ $totalMachines }}</span></p>
                 </div>
                 <div
                     class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-500 border border-transparent dark:border-slate-700/50">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
             </div>
 
-            <div class="flex-1 flex flex-col space-y-4 justify-center">
-                <!-- Today Stat Card -->
-                <div
-                    class="group flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-slate-900 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all hover:border-cyan-500/30">
-                    <div class="flex items-center gap-x-4">
-                        <div
-                            class="w-12 h-12 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 flex items-center justify-center text-cyan-600 dark:text-cyan-400 shadow-sm transition-transform group-hover:scale-110">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.25 18L9 11.25l4.5 4.5L21.75 7.5M21.75 7.5V12m0-4.5H17.25" />
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ __("Today Cumulative Sales") }}</p>
-                            <p
-                                class="text-4xl font-black text-slate-900 dark:text-white mt-1 tracking-tight drop-shadow-sm">
-                                ${{ number_format($todayRevenue, 0) }}</p>
+            <div class="flex-1 space-y-3 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
+                @forelse($recentLogs as $log)
+                <div class="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-2 h-2 rounded-full shrink-0 {{ $log->level === 'error' ? 'bg-rose-500' : ($log->level === 'warning' ? 'bg-amber-500' : 'bg-cyan-500') }}"></span>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{{ $log->translated_message }}</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{{ $log->machine->name ?? __('Unknown Machine') }}</p>
                         </div>
                     </div>
-                    <div class="flex flex-col items-end gap-y-1">
-                        <span
-                            class="text-[10px] font-black {{ $yesterdayTrend >= 0 ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-500 bg-rose-500/10' }} px-2.5 py-0.5 rounded-full">{{ $yesterdayTrend >= 0 ? '+' : '' }}{{ number_format($yesterdayTrend, 1) }}%</span>
-                        <p class="text-[9px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-tighter">{{
-                            __('vs Yesterday') }}</p>
-                    </div>
+                    <span class="text-[10px] font-bold text-slate-400 shrink-0">{{ $log->created_at->diffForHumans() }}</span>
                 </div>
-
-                <!-- Previous Days Stats Row -->
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- Yesterday Card -->
-                    <div
-                        class="group flex flex-col p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all hover:border-cyan-500/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ __("Yesterday") }}</p>
-                            <div
-                                class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                    stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                        </div>
-                        <p class="text-xl font-black text-slate-800 dark:text-slate-200">${{ number_format($yesterdayRevenue, 0) }}</p>
-                    </div>
-
-                    <!-- Before Yesterday Card -->
-                    <div
-                        class="group flex flex-col p-5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 transition-all hover:border-cyan-500/20">
-                        <div class="flex justify-between items-start mb-2">
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">{{ __("Day Before") }}</p>
-                            <div
-                                class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                    stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                </svg>
-                            </div>
-                        </div>
-                        <p class="text-xl font-black text-slate-800 dark:text-slate-200">${{ number_format($dayBeforeRevenue, 0) }}</p>
-                    </div>
+                @empty
+                <div class="flex-1 flex items-center justify-center py-16 text-slate-400 text-sm font-bold">
+                    {{ __('No data available') }}
                 </div>
+                @endforelse
             </div>
         </div>
     </div>
@@ -194,8 +146,6 @@
                         <th class="px-6 py-4 text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">{{ __('Machine Info') }}</th>
                         <th class="px-6 py-4 text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 text-center">{{ __('Running Status') }}</th>
                         <th class="px-6 py-4 text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 text-center">{{ __('Sub-machine Status') }}</th>
-                        <th class="px-6 py-4 text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 text-center">{{ __('Today Cumulative Sales') }}</th>
-                        <th class="px-6 py-4 text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 text-center">{{ __('Current Stock') }}</th>
                         <th class="px-6 py-4 text-[12px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 text-center">{{ __('Last Signal') }}</th>
                     </tr>
                 </thead>
@@ -292,26 +242,6 @@
                             </a>
                         </td>
                         <td class="px-6 py-6 text-center">
-                            <span class="text-base font-extrabold text-slate-900 dark:text-slate-100">$ {{ number_format($machine->today_sales_sum ?? 0, 0) }}</span>
-                        </td>
-                        <td class="px-6 py-6">
-                            <div class="block group/stock">
-                                @php
-                                $stockSum = (float)($machine->slots_sum_stock ?? 0);
-                                $maxStockSum = (float)($machine->slots_sum_max_stock ?? 0);
-                                $stockPercentage = $maxStockSum > 0 ? round(($stockSum / $maxStockSum) * 100, 1) : 0;
-                                $barColor = $stockPercentage < 20 ? 'bg-rose-500' : ($stockPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500');
-                                $textColor = str_replace('bg-', 'text-', $barColor);
-                                @endphp
-                                <div class="flex flex-col items-center gap-y-2.5">
-                                    <div class="w-32 h-2 bg-slate-100 dark:bg-white/10 border border-slate-200/60 dark:border-slate-700/30 rounded-full overflow-hidden shadow-inner transition-all">
-                                        <div class="h-full {{ $barColor }} rounded-full" style="width: {{ $stockPercentage }}%"></div>
-                                    </div>
-                                    <span class="text-sm font-black {{ $textColor }} uppercase tracking-[0.2em] transition-colors">{{ $stockPercentage }}%</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-6 text-center">
                             <div class="text-xs font-black text-slate-400 dark:text-slate-400/80 uppercase tracking-widest leading-none">
                                 {{ $machine->last_heartbeat_at ? $machine->last_heartbeat_at->format('Y-m-d H:i:s') : '---' }}
                             </div>
@@ -319,7 +249,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-32 text-center text-slate-400">{{ __('No data available') }}</td>
+                        <td colspan="4" class="px-6 py-32 text-center text-slate-400">{{ __('No data available') }}</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -385,10 +315,6 @@
                 <!-- Info Grid (Content from Dashboard) -->
                 <div class="grid grid-cols-2 gap-y-4 mb-6 border-y border-slate-100 dark:border-slate-800/50 py-4">
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{{ __('Today Cumulative Sales') }}</p>
-                        <p class="text-sm font-bold text-slate-700 dark:text-slate-300 font-mono">$ {{ number_format($machine->today_sales_sum ?? 0, 0) }}</p>
-                    </div>
-                    <div>
                         <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{{ __('Status') }}</p>
                         <div class="flex flex-col">
                             <a href="{{ route('admin.machines.index', ['search' => $machine->serial_no]) }}" class="block hover:scale-105 transition-transform origin-left">
@@ -434,25 +360,6 @@
                         <p class="text-sm font-bold text-slate-700 dark:text-slate-300 font-mono">
                             {{ $machine->last_heartbeat_at ? $machine->last_heartbeat_at->format('Y-m-d H:i:s') : '---' }}
                         </p>
-                    </div>
-                </div>
-
-                <!-- Stock Bar Section (Essential for Dashboard) -->
-                <div class="mb-2">
-                    <div class="block">
-                        @php
-                            $stockSum = (float)($machine->slots_sum_stock ?? 0);
-                            $maxStockSum = (float)($machine->slots_sum_max_stock ?? 0);
-                            $stockPercentage = $maxStockSum > 0 ? round(($stockSum / $maxStockSum) * 100, 1) : 0;
-                            $barColor = $stockPercentage < 20 ? 'bg-rose-500' : ($stockPercentage < 50 ? 'bg-amber-500' : 'bg-emerald-500');
-                        @endphp
-                        <div class="flex justify-between items-end mb-2">
-                            <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest transition-colors">{{ __('Current Stock') }}</p>
-                            <span class="text-xs font-black {{ str_replace('bg-', 'text-', $barColor) }} transition-transform">{{ $stockPercentage }}%</span>
-                        </div>
-                        <div class="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden shadow-inner transition-all">
-                            <div class="h-full {{ $barColor }} transition-all duration-500" style="width: {{ $stockPercentage }}%"></div>
-                        </div>
                     </div>
                 </div>
             </div>
