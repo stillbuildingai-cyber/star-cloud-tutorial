@@ -42,6 +42,29 @@ Route::prefix('v1')->middleware(['throttle:api'])->group(function () {
         Route::post('admin/login/B000', [\App\Http\Controllers\Api\V1\App\MachineAuthController::class, 'loginB000'])->middleware('throttle:30,1');
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | 專屬 App API Routes (Customer)
+    |--------------------------------------------------------------------------
+    | 給終端使用者的手機 App 用，跟上面 app/* 那組「機台本機認證」用途不同。
+    */
+    Route::prefix('app/customer')->group(function () {
+        Route::post('login', [\App\Http\Controllers\Api\V1\App\CustomerAuthController::class, 'login'])->middleware('throttle:10,1');
+
+        Route::middleware(['auth:sanctum', 'throttle:100,1'])->group(function () {
+            Route::post('logout', [\App\Http\Controllers\Api\V1\App\CustomerAuthController::class, 'logout']);
+
+            Route::get('machines', [\App\Http\Controllers\Api\V1\App\CustomerMachineController::class, 'index']);
+            Route::get('machines/{machine}', [\App\Http\Controllers\Api\V1\App\CustomerMachineController::class, 'show']);
+            Route::post('machines/{machine}/commands', [\App\Http\Controllers\Api\V1\App\CustomerMachineController::class, 'storeCommand']);
+
+            Route::get('machines/{machine}/schedules', [\App\Http\Controllers\Api\V1\App\CustomerScheduleController::class, 'index']);
+            Route::post('machines/{machine}/schedules', [\App\Http\Controllers\Api\V1\App\CustomerScheduleController::class, 'store']);
+            Route::patch('machines/{machine}/schedules/{schedule}/toggle', [\App\Http\Controllers\Api\V1\App\CustomerScheduleController::class, 'toggle']);
+            Route::delete('machines/{machine}/schedules/{schedule}', [\App\Http\Controllers\Api\V1\App\CustomerScheduleController::class, 'destroy']);
+        });
+    });
+
 });
 
 use App\Http\Controllers\MachineController;
