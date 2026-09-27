@@ -244,4 +244,76 @@ class MachineController extends AdminController
             'data' => $chartData
         ]);
     }
+
+    /**
+     * AJAX: 取得機台即時功率歷史紀錄 (供圖表使用)
+     */
+    public function powerUsageAjax(Request $request, Machine $machine)
+    {
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        $logs = $machine->logs()
+            ->where('type', 'power_usage')
+            ->when($startDate, function ($query, $start) {
+                return $query->where('created_at', '>=', str_replace('T', ' ', $start));
+            })
+            ->when($endDate, function ($query, $end) {
+                return $query->where('created_at', '<=', str_replace('T', ' ', $end));
+            })
+            ->oldest()
+            ->get();
+
+        $chartData = $logs->map(fn($log) => [
+            'x' => $log->created_at->getTimestamp() * 1000,
+            'y' => (float) ($log->context['watt'] ?? 0),
+        ])->values()->toArray();
+
+        return response()->json([
+            'success' => true,
+            'data' => $chartData
+        ]);
+    }
+
+    /**
+     * AJAX: 依日期分組，用當天累計用電量的 max-min 算出「每日用電量」(供圖表使用)
+     *
+     * 累計計數器只會往上走，不怕上報間隔不固定或中途斷線，
+     * 比直接加總每次回報的瞬時功率更準確。
+     */
+    public function dailyEnergyAjax(Request $request, Machine $machine)
+    {
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        $logs = $machine->logs()
+            ->where('type', 'power_usage')
+            ->when($startDate, function ($query, $start) {
+                return $query->where('created_at', '>=', str_replace('T', ' ', $start));
+            })
+            ->when($endDate, function ($query, $end) {
+                return $query->where('created_at', '<=', str_replace('T', ' ', $end));
+            })
+            ->oldest()
+            ->get();
+
+        $chartData = $logs
+            ->groupBy(fn($log) => $log->created_at->format('Y-m-d'))
+            ->map(function ($dayLogs, $date) {
+                $values = $dayLogs->map(fn($log) => (float) ($log->context['kwh'] ?? 0));
+                $usage = $values->max() - $values->min();
+
+                return [
+                    'x' => \Illuminate\Support\Carbon::parse($date)->getTimestamp() * 1000,
+                    'y' => round($usage, 3),
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'data' => $chartData
+        ]);
+    }
 }

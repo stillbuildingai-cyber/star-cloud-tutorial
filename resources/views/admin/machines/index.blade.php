@@ -57,6 +57,8 @@
 
             temperatureChart: null,
             ambientTemperatureChart: null,
+            powerUsageChart: null,
+            dailyEnergyChart: null,
 
             init() {
                 const now = new Date();
@@ -71,17 +73,22 @@
                         this.fetchTemperatureData();
                     } else if (val === 'ambient_temp') {
                         this.fetchAmbientTemperatureData();
+                    } else if (val === 'power_usage') {
+                        this.fetchPowerUsageData();
+                        this.fetchDailyEnergyData();
                     }
                 });
 
                 // 監聽日期變動，同步更新圖表 (僅在當前為狀態分頁時)
-                this.$watch('startDate', () => { 
-                    if(this.activeTab === 'status') this.fetchTemperatureData(); 
-                    if(this.activeTab === 'ambient_temp') this.fetchAmbientTemperatureData(); 
+                this.$watch('startDate', () => {
+                    if(this.activeTab === 'status') this.fetchTemperatureData();
+                    if(this.activeTab === 'ambient_temp') this.fetchAmbientTemperatureData();
+                    if(this.activeTab === 'power_usage') { this.fetchPowerUsageData(); this.fetchDailyEnergyData(); }
                 });
-                this.$watch('endDate', () => { 
-                    if(this.activeTab === 'status') this.fetchTemperatureData(); 
-                    if(this.activeTab === 'ambient_temp') this.fetchAmbientTemperatureData(); 
+                this.$watch('endDate', () => {
+                    if(this.activeTab === 'status') this.fetchTemperatureData();
+                    if(this.activeTab === 'ambient_temp') this.fetchAmbientTemperatureData();
+                    if(this.activeTab === 'power_usage') { this.fetchPowerUsageData(); this.fetchDailyEnergyData(); }
                 });
             },
 
@@ -129,6 +136,195 @@
                         this.initAmbientTemperatureChart(data.data);
                     }
                 } catch (e) { console.error('fetchAmbientTemperatureData error:', e); }
+            },
+
+            async fetchPowerUsageData() {
+                if (this.activeTab !== 'power_usage') return;
+                try {
+                    let url = `/admin/machines/${this.currentMachineId}/power-usage-ajax?`;
+                    if (this.startDate) url += '&start_date=' + this.startDate;
+                    if (this.endDate) url += '&end_date=' + this.endDate;
+
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.success) {
+                        this.initPowerUsageChart(data.data);
+                    }
+                } catch (e) { console.error('fetchPowerUsageData error:', e); }
+            },
+
+            async fetchDailyEnergyData() {
+                if (this.activeTab !== 'power_usage') return;
+                try {
+                    let url = `/admin/machines/${this.currentMachineId}/daily-energy-ajax?`;
+                    if (this.startDate) url += '&start_date=' + this.startDate;
+                    if (this.endDate) url += '&end_date=' + this.endDate;
+
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    if (data.success) {
+                        this.initDailyEnergyChart(data.data);
+                    }
+                } catch (e) { console.error('fetchDailyEnergyData error:', e); }
+            },
+
+            initPowerUsageChart(chartData) {
+                this.$nextTick(() => {
+                    const chartEl = document.querySelector("#power-usage-chart");
+                    if (!chartEl) return;
+
+                    const isDark = document.documentElement.classList.contains('dark');
+
+                    const options = {
+                        series: [{
+                            name: "{{ __('Power') }}",
+                            data: chartData
+                        }],
+                        chart: {
+                            id: 'power-usage-chart-inner',
+                            type: 'area',
+                            height: 200,
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                            animations: { enabled: false },
+                            background: 'transparent',
+                            accessibility: { enabled: false }
+                        },
+                        colors: ['#eab308'],
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.45,
+                                opacityTo: 0.05,
+                                stops: [20, 100]
+                            }
+                        },
+                        dataLabels: { enabled: false },
+                        stroke: {
+                            curve: 'smooth',
+                            width: 3
+                        },
+                        grid: {
+                            borderColor: isDark ? '#1e293b' : '#f1f5f9',
+                            strokeDashArray: 4,
+                            padding: { left: 10, right: 10 }
+                        },
+                        xaxis: {
+                            type: 'datetime',
+                            labels: {
+                                show: true,
+                                style: { colors: '#94a3b8', fontSize: '10px', fontWeight: 600 },
+                                datetimeUTC: false,
+                                format: 'HH:mm',
+                                hideOverlappingLabels: true,
+                            },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false },
+                            tooltip: { enabled: false },
+                            tickAmount: 6
+                        },
+                        yaxis: {
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '10px', fontWeight: 600 },
+                                formatter: (val) => val + 'W'
+                            }
+                        },
+                        tooltip: {
+                            theme: isDark ? 'dark' : 'light',
+                            x: {
+                                show: true,
+                                format: 'yyyy/MM/dd HH:mm:ss'
+                            },
+                            y: {
+                                title: {
+                                    formatter: (seriesName) => seriesName + ': '
+                                }
+                            }
+                        }
+                    };
+
+                    if (this.powerUsageChart) {
+                        this.powerUsageChart.updateOptions(options);
+                    } else {
+                        this.powerUsageChart = new ApexCharts(chartEl, options);
+                        this.powerUsageChart.render();
+                    }
+                });
+            },
+
+            initDailyEnergyChart(chartData) {
+                this.$nextTick(() => {
+                    const chartEl = document.querySelector("#daily-energy-chart");
+                    if (!chartEl) return;
+
+                    const isDark = document.documentElement.classList.contains('dark');
+
+                    const options = {
+                        series: [{
+                            name: "{{ __('Daily Energy Usage') }}",
+                            data: chartData
+                        }],
+                        chart: {
+                            id: 'daily-energy-chart-inner',
+                            type: 'bar',
+                            height: 200,
+                            toolbar: { show: false },
+                            zoom: { enabled: false },
+                            animations: { enabled: false },
+                            background: 'transparent',
+                            accessibility: { enabled: false }
+                        },
+                        colors: ['#d4af37'],
+                        plotOptions: {
+                            bar: { borderRadius: 4, columnWidth: '55%' }
+                        },
+                        dataLabels: { enabled: false },
+                        grid: {
+                            borderColor: isDark ? '#1e293b' : '#f1f5f9',
+                            strokeDashArray: 4,
+                            padding: { left: 10, right: 10 }
+                        },
+                        xaxis: {
+                            type: 'datetime',
+                            labels: {
+                                show: true,
+                                style: { colors: '#94a3b8', fontSize: '10px', fontWeight: 600 },
+                                datetimeUTC: false,
+                                format: 'MM/dd',
+                                hideOverlappingLabels: true,
+                            },
+                            axisBorder: { show: false },
+                            axisTicks: { show: false },
+                            tooltip: { enabled: false }
+                        },
+                        yaxis: {
+                            labels: {
+                                style: { colors: '#94a3b8', fontSize: '10px', fontWeight: 600 },
+                                formatter: (val) => val + ' {{ __('kWh') }}'
+                            }
+                        },
+                        tooltip: {
+                            theme: isDark ? 'dark' : 'light',
+                            x: {
+                                show: true,
+                                format: 'yyyy/MM/dd'
+                            },
+                            y: {
+                                title: {
+                                    formatter: (seriesName) => seriesName + ': '
+                                }
+                            }
+                        }
+                    };
+
+                    if (this.dailyEnergyChart) {
+                        this.dailyEnergyChart.updateOptions(options);
+                    } else {
+                        this.dailyEnergyChart = new ApexCharts(chartEl, options);
+                        this.dailyEnergyChart.render();
+                    }
+                });
             },
 
             initAmbientTemperatureChart(chartData) {
@@ -1047,7 +1243,12 @@
                                     x-cloak>
                                     {{ __('Ambient Temperature Log') }}
                                 </button>
- 
+                                <button @click="activeTab = 'power_usage'"
+                                    :class="{'border-cyan-500 text-cyan-600 dark:text-cyan-400': activeTab === 'power_usage', 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:hover:text-slate-300': activeTab !== 'power_usage'}"
+                                    class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-[13px] sm:text-sm transition duration-300">
+                                    {{ __('Power Usage Analysis') }}
+                                </button>
+
                             </nav>
                         </div>
  
@@ -1113,6 +1314,29 @@
                                         </span>
                                     </div>
                                     <div id="ambient-temperature-chart" class="min-h-[200px] w-full"></div>
+                                </div>
+
+                                <!-- Power Usage Trend + Daily Energy Chart -->
+                                <div x-show="activeTab === 'power_usage'"
+                                    class="mb-6 p-4 rounded-2xl bg-slate-50/50 dark:bg-white/[0.02] border border-slate-100 dark:border-slate-800/50" x-cloak>
+                                    <div class="flex items-center justify-between mb-4 px-2">
+                                        <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></span>
+                                            {{ __('Power Trend') }}
+                                        </h3>
+                                        <span class="text-[10px] font-bold text-slate-400" x-show="logs.length > 0">
+                                            <span x-text="currentMachineName"></span> @ <span x-text="startDate.split(' ')[0]"></span>
+                                        </span>
+                                    </div>
+                                    <div id="power-usage-chart" class="min-h-[200px] w-full"></div>
+
+                                    <div class="flex items-center justify-between mb-4 mt-8 px-2">
+                                        <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(212,175,55,0.5)]"></span>
+                                            {{ __('Daily Energy Usage') }}
+                                        </h3>
+                                    </div>
+                                    <div id="daily-energy-chart" class="min-h-[200px] w-full"></div>
                                 </div>
 
                                 <!-- Logs Container -->

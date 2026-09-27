@@ -96,6 +96,10 @@ class ListenMqttQueue extends Command
                 $finalPayload = is_array($payload) ? $payload : ['temperature' => $payload];
                 \App\Jobs\Machine\ProcessAmbientTemp::dispatch($serialNo, $finalPayload);
                 break;
+            case 'power_usage':
+                $finalPayload = is_array($payload) ? $payload : [];
+                \App\Jobs\Machine\ProcessPowerUsage::dispatch($serialNo, $finalPayload);
+                break;
             case 'status':
                 ProcessStatus::dispatch($serialNo, $payload);
                 break;

@@ -52,6 +52,8 @@ Route::middleware(['auth', 'auth.session', 'verified', 'tenant.access'])->prefix
         Route::get('/{machine}/logs-ajax', [App\Http\Controllers\Admin\MachineController::class, 'logsAjax'])->name('logs-ajax');
         Route::get('/{machine}/temperature-ajax', [App\Http\Controllers\Admin\MachineController::class, 'temperatureAjax'])->name('temperature-ajax');
         Route::get('/{machine}/ambient-temperature-ajax', [App\Http\Controllers\Admin\MachineController::class, 'ambientTemperatureAjax'])->name('ambient-temperature-ajax');
+        Route::get('/{machine}/power-usage-ajax', [App\Http\Controllers\Admin\MachineController::class, 'powerUsageAjax'])->name('power-usage-ajax');
+        Route::get('/{machine}/daily-energy-ajax', [App\Http\Controllers\Admin\MachineController::class, 'dailyEnergyAjax'])->name('daily-energy-ajax');
         Route::post('/{machine}/resolve-logs', [App\Http\Controllers\Admin\MachineController::class, 'resolveLogs'])->name('resolve-logs');
     });
     Route::resource('machines', App\Http\Controllers\Admin\MachineController::class);

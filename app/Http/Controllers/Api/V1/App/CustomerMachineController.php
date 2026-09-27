@@ -26,7 +26,7 @@ class CustomerMachineController extends Controller
     {
         $machines = $request->user()->machines()
             ->orderByDesc('last_heartbeat_at')
-            ->get(['machines.id', 'machines.name', 'machines.serial_no', 'machines.status', 'machines.last_heartbeat_at', 'machines.ambient_temperature']);
+            ->get(['machines.id', 'machines.name', 'machines.serial_no', 'machines.status', 'machines.last_heartbeat_at', 'machines.ambient_temperature', 'machines.power_watt', 'machines.energy_kwh_total']);
 
         return response()->json([
             'success' => true,
@@ -107,6 +107,8 @@ class CustomerMachineController extends Controller
             'serial_no' => $machine->serial_no,
             'is_online' => $machine->status === 'online',
             'ambient_temperature' => $machine->ambient_temperature,
+            'power_watt' => $machine->power_watt,
+            'energy_kwh_total' => $machine->energy_kwh_total,
             'last_heartbeat_at' => $machine->last_heartbeat_at,
         ];
     }
