@@ -100,6 +100,10 @@ class ListenMqttQueue extends Command
                 $finalPayload = is_array($payload) ? $payload : [];
                 \App\Jobs\Machine\ProcessPowerUsage::dispatch($serialNo, $finalPayload);
                 break;
+            case 'curtain_position':
+                $finalPayload = is_array($payload) ? $payload : ['position' => $payload];
+                \App\Jobs\Machine\ProcessCurtainPosition::dispatch($serialNo, $finalPayload);
+                break;
             case 'status':
                 ProcessStatus::dispatch($serialNo, $payload);
                 break;

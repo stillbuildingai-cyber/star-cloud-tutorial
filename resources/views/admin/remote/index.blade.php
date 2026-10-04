@@ -72,6 +72,7 @@
             // Form States
             lockStatus: false,
             changeAmount: 100,
+            curtainTargetPosition: 50,
             note: '',
 
             async init() {
@@ -365,6 +366,10 @@
                     'power_off': this.translations['Power Off'] || '電源關閉',
                     'power_toggle': this.translations['Power Toggle'] || '電源切換',
                     'power_status': this.translations['Power Status'] || '狀態查詢',
+                    'curtain_open': this.translations['Curtain Open'] || '窗簾開啟',
+                    'curtain_close': this.translations['Curtain Close'] || '窗簾關閉',
+                    'curtain_stop': this.translations['Curtain Stop'] || '窗簾停止',
+                    'curtain_set_position': this.translations['Curtain Set Position'] || '窗簾設定位置',
                     'ambient_temp_limit': this.translations['Ambient Temperature Upper Limit'],
                     'change': this.translations['Remote Change'],
                     'dispense': this.translations['Remote Dispense'],
@@ -681,6 +686,50 @@
                                                     class="text-sm font-black text-slate-800 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                                                     {{ __('Remote Settlement') }}</div>
                                             </div>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Curtain Controls（只有 device_type = smart_curtain 的機台才會顯示，
+                                     示範同一套指令派送機制怎麼管理跟插座完全不同的裝置類型） -->
+                                <div class="space-y-4" x-show="selectedMachine && selectedMachine.device_type === 'smart_curtain'" x-cloak>
+                                    <div class="flex items-center gap-3 ml-1">
+                                        <div class="w-1 h-3 bg-slate-300 dark:bg-slate-700 rounded-full"></div>
+                                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{{ __('Curtain Controls') }}</span>
+                                        <span class="text-[10px] font-bold text-slate-400" x-show="selectedMachine && selectedMachine.curtain_position !== null">
+                                            {{ __('Current position') }}: <span x-text="selectedMachine?.curtain_position"></span>%
+                                        </span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                                        <button @click="sendCommand('curtain_open')"
+                                            class="p-6 rounded-3xl border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-5 hover:border-emerald-500/60 dark:hover:border-emerald-400/70 hover:bg-emerald-500/5 dark:hover:bg-emerald-400/5 group transition-all bg-white/50 dark:bg-slate-900/40 shadow-sm">
+                                            <div class="text-left">
+                                                <div class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider group-hover:text-emerald-500 transition-colors">{{ __('Open') }}</div>
+                                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ __('Fully open the curtain') }}</div>
+                                            </div>
+                                        </button>
+                                        <button @click="sendCommand('curtain_close')"
+                                            class="p-6 rounded-3xl border border-rose-200 dark:border-rose-500/30 flex items-center gap-5 hover:border-rose-500/60 dark:hover:border-rose-400/70 hover:bg-rose-500/5 dark:hover:bg-rose-400/5 group transition-all bg-white/50 dark:bg-slate-900/40 shadow-sm">
+                                            <div class="text-left">
+                                                <div class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider group-hover:text-rose-500 transition-colors">{{ __('Close') }}</div>
+                                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ __('Fully close the curtain') }}</div>
+                                            </div>
+                                        </button>
+                                        <button @click="sendCommand('curtain_stop')"
+                                            class="p-6 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-5 hover:border-cyan-500/50 dark:hover:border-cyan-400/60 hover:bg-cyan-500/5 dark:hover:bg-cyan-400/5 group transition-all bg-white/50 dark:bg-slate-900/40 shadow-sm">
+                                            <div class="text-left">
+                                                <div class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">{{ __('Stop') }}</div>
+                                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{{ __('Stop at the current position') }}</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <input type="range" min="0" max="100" x-model="curtainTargetPosition"
+                                            class="flex-1">
+                                        <span class="text-sm font-black text-slate-600 dark:text-slate-300 w-12 text-right" x-text="curtainTargetPosition + '%'"></span>
+                                        <button @click="sendCommand('curtain_set_position', { amount: curtainTargetPosition })"
+                                            class="px-5 py-3 rounded-2xl bg-cyan-500 text-white text-sm font-black uppercase tracking-wider hover:bg-cyan-600 transition-colors">
+                                            {{ __('Set Position') }}
                                         </button>
                                     </div>
                                 </div>

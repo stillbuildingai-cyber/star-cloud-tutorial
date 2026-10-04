@@ -141,7 +141,7 @@ class RemoteController extends Controller
     {
         $validated = $request->validate([
             'machine_id' => 'required|exists:machines,id',
-            'command_type' => 'required|string|in:reboot,reboot_force,reboot_card,checkout,lock,unlock,change,fanon,fanoff,fanauto,power_on,power_off,power_toggle,power_status',
+            'command_type' => 'required|string|in:reboot,reboot_force,reboot_card,checkout,lock,unlock,change,fanon,fanoff,fanauto,power_on,power_off,power_toggle,power_status,curtain_open,curtain_close,curtain_stop,curtain_set_position',
             'amount' => 'nullable|integer|min:0',
             'note' => 'nullable|string|max:255',
         ]);
@@ -149,6 +149,9 @@ class RemoteController extends Controller
         $payload = [];
         if ($validated['command_type'] === 'change') {
             $payload['amount'] = $validated['amount'];
+        } elseif ($validated['command_type'] === 'curtain_set_position') {
+            // 借用既有的 amount 欄位當目標開合位置（0~100），不用另外開一個參數
+            $payload['position'] = min(100, $validated['amount'] ?? 0);
         }
 
         // 指令去重：將同機台、同類期的 pending 指令標記為「已取代」

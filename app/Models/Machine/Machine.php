@@ -50,6 +50,8 @@ class Machine extends Model
     protected $fillable = [
         'company_id',
         'name',
+        'device_type',
+        'curtain_position',
         'serial_no',
         'model',
         'location',
@@ -353,6 +355,7 @@ class Machine extends Model
         'ambient_temp_setting' => 'float',
         'power_watt' => 'float',
         'energy_kwh_total' => 'float',
+        'curtain_position' => 'integer',
         'ambient_temp_monitoring_enabled' => 'boolean',
         'welcome_gift_enabled' => 'boolean',
         'is_spring_slot_1_10' => 'boolean',
@@ -612,5 +615,19 @@ class Machine extends Model
             return $this->ambient_temperature;
         }
         return $this->ambient_temperature ?? $this->temperature;
+    }
+
+    /**
+     * device_type 是這套機隊管理骨架能不能管理「不只插座」的裝置的證明。
+     * 新增一種裝置類型，只要在這裡加一個判斷方法，不用動其他地方的架構。
+     */
+    public function isSmartCurtain(): bool
+    {
+        return $this->device_type === 'smart_curtain';
+    }
+
+    public function isSmartSocket(): bool
+    {
+        return $this->device_type === 'smart_socket' || empty($this->device_type);
     }
 }
